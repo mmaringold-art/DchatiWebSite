@@ -1,0 +1,12 @@
+# Normalize line endings — enforce LF for text (deploys to Linux/nginx)
+* text=auto eol=lf
+
+# Binary types (leave untouched)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary

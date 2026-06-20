@@ -1,0 +1,31 @@
+# Dchati marketing website (www.dchati.com)
+# Static site served by nginx, fronted by Nginx Proxy Manager (container: npm).
+#
+# How it connects:
+#   NPM terminates TLS and proxies to this container BY NAME over the shared
+#   "dchati_shared" network (NPM is already attached to it). This container does
+#   NOT publish a host port — NPM reaches it internally on port 80. Hostname +
+#   SSL are configured in the NPM UI, NOT in this file.
+#
+#   NPM Proxy Host:  www.dchati.com / dchati.com  ->  http://dchati-website:80
+
+services:
+  website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dchati-website:latest
+    container_name: dchati-website     # <-- the "Forward Hostname" you enter in NPM
+    restart: unless-stopped
+    expose:
+      - "80"                           # internal only; reachable by NPM over dchati_shared
+    networks:
+      - proxy
+    # Quick proxy-less smoke test only — leave commented in production:
+    # ports:
+    #   - "8081:80"
+
+networks:
+  proxy:
+    external: true
+    name: dchati_shared    # existing shared network that NPM (container: npm) is attached to

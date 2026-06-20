@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plataforma Dchati — Accede a tu workspace</title>
+  <meta name="description" content="Entra a la plataforma Dchati. Inicia sesión y accede automáticamente al CRM de tu empresa." />
+  <meta name="theme-color" content="#0f161d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/platform.css" />
+</head>
+<body>
+
+  <main class="shell">
+
+    <!-- ============ LEFT: form ============ -->
+    <section class="pane-left">
+      <div class="brandbar">
+        <a class="logo" href="Dchati Landing.html">Dchati<span class="dot">.</span></a>
+        <a class="back-link" href="Dchati Landing.html">← Volver al sitio</a>
+      </div>
+
+      <div class="form-region enter-stagger">
+        <span class="eyebrow">Plataforma</span>
+        <h1>Entra a tu workspace</h1>
+        <p class="intro">Un solo acceso para todo Dchati. Inicia sesión y te llevamos directo al CRM de tu empresa — sin elegir, sin pasos extra.</p>
+
+        <div class="form-alert" id="form-alert" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <span></span>
+        </div>
+
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="email">Correo de trabajo</label>
+            <div class="input-wrap">
+              <input type="email" id="email" name="email" placeholder="tu@empresa.com" autocomplete="email" required aria-describedby="email-error" />
+            </div>
+            <span class="field-error" id="email-error" aria-live="polite"></span>
+          </div>
+
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <div class="input-wrap has-toggle">
+              <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required aria-describedby="password-error" />
+              <button type="button" class="toggle-pw" aria-label="Mostrar contraseña" aria-pressed="false"></button>
+            </div>
+            <span class="field-error" id="password-error" aria-live="polite"></span>
+          </div>
+
+          <div class="form-row">
+            <label class="remember">
+              <input type="checkbox" name="remember" />
+              Recordarme
+            </label>
+            <a href="#" class="link-quiet" onclick="event.preventDefault()">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submit-btn">
+            <span class="label-default">Entrar a la plataforma</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <details class="demo">
+          <summary>Cuentas de demostración</summary>
+          <div class="demo-list">
+            <button type="button" class="demo-acct" data-email="ana@scopice.com">
+              <span class="pip" style="background: oklch(0.78 0.15 195)">S</span>
+              <span class="meta"><b>Scopice</b><span>ana@scopice.com</span></span>
+              <span class="arrow">→ Scopice CRM</span>
+            </button>
+            <button type="button" class="demo-acct" data-email="dr.lopez@dentalclinic.com">
+              <span class="pip" style="background: oklch(0.78 0.15 168)">D</span>
+              <span class="meta"><b>Dental Clinic</b><span>dr.lopez@dentalclinic.com</span></span>
+              <span class="arrow">→ Dental CRM</span>
+            </button>
+            <button type="button" class="demo-acct" data-email="maria@salon.com">
+              <span class="pip" style="background: oklch(0.78 0.15 322)">S</span>
+              <span class="meta"><b>Salón Belleza</b><span>maria@salon.com</span></span>
+              <span class="arrow">→ Salon CRM</span>
+            </button>
+          </div>
+          <p class="demo-note">Toca una cuenta para autocompletar. Contraseña: <code>demo1234</code></p>
+        </details>
+      </div>
+
+      <div class="pane-foot">
+        <span>© 2026 Dchati</span>
+        <a href="privacy.html">Privacidad</a>
+        <a href="terms.html">Términos</a>
+        <a href="Dchati Landing.html#contacto">Soporte</a>
+      </div>
+    </section>
+
+    <!-- ============ RIGHT: AI core ============ -->
+    <section class="pane-right">
+      <canvas id="core-canvas" aria-hidden="true"></canvas>
+      <div class="visual-copy">
+        <div class="vc-eyebrow">Núcleo de IA · en vivo</div>
+        <h2>Una inteligencia, todas tus conversaciones</h2>
+        <p>El mismo motor que atiende a tus clientes en WhatsApp, ahora a tu alcance.</p>
+        <div class="vc-chips">
+          <span class="vc-chip">Multi-empresa</span>
+          <span class="vc-chip">Tiempo real</span>
+          <span class="vc-chip">Seguro</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ Success / routing overlay ============ -->
+  <div class="success" id="success" role="dialog" aria-modal="true" aria-labelledby="success-name">
+    <div class="success-card">
+      <div class="success-badge" id="success-badge">D</div>
+      <div class="status-line">Acceso concedido</div>
+      <h2>Bienvenido a <span id="success-name">tu workspace</span></h2>
+      <p>Estamos abriendo el CRM de tu empresa…</p>
+      <div class="dest" id="success-dest">app.dchati.com</div>
+      <div class="success-progress"><i id="success-bar"></i></div>
+      <a class="btn-enter" id="enter-btn" href="#">Entrar ahora →</a>
+    </div>
+  </div>
+
+  <script src="js/platform.js"></script>
+</body>
+</html>

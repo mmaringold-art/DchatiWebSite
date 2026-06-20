@@ -1,0 +1,20 @@
+# Dependencies (not needed to deploy — static site)
+node_modules/
+
+# Local dev / tooling artifacts (not part of the website)
+.agents/
+.mcp.json
+skills-lock.json
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.vscode/
+.idea/

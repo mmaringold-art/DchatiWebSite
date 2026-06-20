@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dchati — IA para WhatsApp y gestión de clientes</title>
+  <meta name="description" content="Dchati automatiza tus conversaciones de WhatsApp con inteligencia artificial: responde clientes, califica leads, agenda citas y centraliza todo en un CRM." />
+  <meta name="theme-color" content="#10181f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/crm.css" />
+  <script>
+    const DCHATI_CONFIG = /*EDITMODE-BEGIN*/{
+      "accentHue": 195,
+      "particleDensity": 70,
+      "whatsappNumber": ""
+    }/*EDITMODE-END*/;
+  </script>
+</head>
+<body>
+
+  <div class="aurora" aria-hidden="true"><div class="aurora-layer"></div></div>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+  <div class="scroll-progress" aria-hidden="true"></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="logo" href="#">Dchati<span class="dot">.</span></a>
+      <div class="nav-links">
+        <a href="#funciones">Funciones</a>
+        <a href="#casos">Casos de uso</a>
+        <a href="platform.html" class="nav-platform">Plataforma</a>
+        <a href="#" class="btn btn-primary btn-sm wa-link">Hablar por WhatsApp</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="wrap hero">
+    <div>
+      <span class="kicker">Plataforma de IA para WhatsApp</span>
+      <h1>Tu WhatsApp <em>atiende solo</em>. Tu negocio crece.</h1>
+      <p class="lead">Dchati responde a tus clientes, califica leads, agenda citas y hace seguimiento con inteligencia artificial — mientras un CRM centraliza contactos, conversaciones y todo tu equipo.</p>
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary wa-link">Hablar por WhatsApp</a>
+        <a href="#funciones" class="btn btn-ghost">Ver funciones</a>
+      </div>
+    </div>
+
+    <div class="chat-wrap">
+      <div class="chat-frame" aria-label="Demo interactiva del asistente de Dchati">
+        <div class="chat-head">
+          <div class="chat-avatar">D</div>
+          <div>
+            <div class="chat-title">Dchati Asistente</div>
+            <div class="chat-status">en línea · demo en vivo</div>
+          </div>
+        </div>
+        <div class="chat-body" id="chat-messages"></div>
+        <form class="chat-inputbar" id="chat-form" autocomplete="off">
+          <input type="text" id="chat-input" placeholder="Escribe un mensaje…" maxlength="200" aria-label="Escribe un mensaje" />
+          <button type="submit" class="chat-send" id="chat-send" aria-label="Enviar">→</button>
+        </form>
+      </div>
+      <div class="chat-hint">Pruébame — soy una demo real</div>
+    </div>
+  </header>
+
+  <section class="brand-moment" id="brand-moment" aria-label="Dchati">
+    <div class="brand-moment-inner">
+      <span class="bm-eyebrow">Dchati</span>
+      <p class="bm-caption">Cada conversación, cada cliente, cada equipo — bajo un solo núcleo.</p>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span>Respuestas 24/7</span><span>Calificación de leads</span><span>Agenda automática</span><span>CRM integrado</span><span>Campañas y seguimientos</span><span>Multi-equipo y multi-marca</span><span>Respuestas 24/7</span><span>Calificación de leads</span><span>Agenda automática</span><span>CRM integrado</span><span>Campañas y seguimientos</span><span>Multi-equipo y multi-marca</span>
+    </div>
+  </div>
+
+  <section id="funciones">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Funciones</span>
+        <h2>Todo tu negocio, en una sola plataforma</h2>
+        <p>Desde la primera conversación hasta la venta cerrada: Dchati automatiza el trabajo repetitivo y deja el control en tus manos.</p>
+      </div>
+
+      <div class="grid-4">
+        <div class="card reveal">
+          <span class="num">01</span>
+          <h3>Asistente con IA</h3>
+          <p>Responde preguntas, califica leads y conversa con tus clientes de forma natural, las 24 horas, todos los días.</p>
+        </div>
+        <div class="card reveal">
+          <span class="num">02</span>
+          <h3>CRM centralizado</h3>
+          <p>Contactos, conversaciones, historial, reservas y campañas en un solo panel, compartido con todo tu equipo.</p>
+        </div>
+        <div class="card reveal">
+          <span class="num">03</span>
+          <h3>Agenda automática</h3>
+          <p>Tus clientes reservan citas directamente en el chat. Sin llamadas, sin planillas, sin idas y vueltas.</p>
+        </div>
+        <div class="card reveal">
+          <span class="num">04</span>
+          <h3>Seguimientos que venden</h3>
+          <p>Recordatorios y campañas automáticas que retoman conversaciones frías y las convierten en ventas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="crm">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Demo interactiva</span>
+        <h2>Explora la plataforma, no una captura</h2>
+        <p>Esto no es una imagen. Navega un Dchati de ejemplo y siente cómo se gestiona un negocio entero desde un solo lugar.</p>
+      </div>
+
+      <div class="crm-window reveal" role="group" aria-label="Demo interactiva de la plataforma Dchati">
+        <div class="crm-titlebar">
+          <div class="crm-lights" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="crm-url" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            app.dchati.com/scopice
+          </div>
+          <div class="crm-tbicons" aria-hidden="true"><span></span><span></span></div>
+        </div>
+
+        <div class="crm-app">
+          <aside class="crm-sidebar">
+            <div class="crm-brand">Dchati<span>.</span></div>
+            <nav class="crm-nav" id="crm-nav" aria-label="Secciones de la demo"></nav>
+            <div class="crm-workspace">
+              <div class="crm-ws-avatar">S</div>
+              <div class="crm-ws-meta">
+                <b>Scopice</b>
+                <span>Plan Business</span>
+              </div>
+            </div>
+          </aside>
+
+          <div class="crm-screen">
+            <header class="crm-topbar">
+              <h3 class="crm-title" id="crm-title">Panel</h3>
+              <div class="crm-search" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <span id="crm-search-label">Buscar en Dchati…</span>
+              </div>
+              <div class="crm-user" title="Tu cuenta">A</div>
+            </header>
+            <div class="crm-panels" id="crm-panels"></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="crm-cta-row reveal">¿Te gusta lo que ves? <a href="#" class="wa-link">Solicita tu demo personalizada →</a></p>
+    </div>
+  </section>
+
+  <section id="casos">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Casos de uso</span>
+        <h2>Flujos diseñados para tu industria</h2>
+        <p>Dchati no es un bot genérico: incluye flujos de trabajo específicos según el tipo de negocio.</p>
+      </div>
+
+      <div class="cases">
+        <div class="card case-card reveal">
+          <h3>Inmobiliarias</h3>
+          <p>Gestiona propiedades, responde consultas de interesados y agenda visitas automáticamente. Cada lead queda registrado y clasificado en tu CRM.</p>
+          <div class="case-tags">
+            <span class="tag">Gestión de propiedades</span>
+            <span class="tag">Calificación de leads</span>
+            <span class="tag">Agenda de visitas</span>
+          </div>
+        </div>
+        <div class="card case-card reveal">
+          <h3>Negocios de servicios</h3>
+          <p>Clínicas, salones, talleres, consultorías: tus clientes agendan, confirman y reciben recordatorios sin que nadie levante el teléfono.</p>
+          <div class="case-tags">
+            <span class="tag">Citas y reservas</span>
+            <span class="tag">Recordatorios</span>
+            <span class="tag">Atención 24/7</span>
+          </div>
+        </div>
+        <div class="card case-card case-wide reveal">
+          <div>
+            <h3>¿Equipos y marcas múltiples?</h3>
+            <p>Dchati es multi-empresa: cada negocio opera de forma independiente con sus propios usuarios, permisos, marca y comportamiento de la IA.</p>
+          </div>
+          <a href="#" class="btn btn-ghost wa-link">Consultar mi caso</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta" id="contacto">
+    <div class="wrap reveal">
+      <h2>¿Listo para automatizar tu negocio?</h2>
+      <p>Escríbenos por WhatsApp y descubre lo que Dchati puede hacer con tus conversaciones.</p>
+      <a href="#" class="btn btn-primary wa-link">Hablar por WhatsApp</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <span>© 2026 Dchati — Plataforma de comunicación y gestión con IA</span>
+      <nav class="foot-links">
+        <a href="privacy.html">Privacidad</a>
+        <a href="terms.html">Términos</a>
+        <a href="#" class="wa-link" style="color: var(--accent); text-decoration: none;">WhatsApp</a>
+      </nav>
+    </div>
+  </footer>
+
+  <button class="tweaks-toggle" type="button">Tweaks</button>
+  <div class="tweaks-panel">
+    <h4>Tweaks</h4>
+    <div class="tweak-row">
+      <label for="tw-wa">Número de WhatsApp</label>
+      <input type="text" id="tw-wa" placeholder="Ej: 5215512345678" inputmode="numeric" />
+      <div class="tweak-hint">Código de país + número, sin "+" ni espacios.</div>
+    </div>
+    <div class="tweak-row">
+      <label for="tw-hue">Tono de acento</label>
+      <input type="range" id="tw-hue" min="150" max="330" step="1" />
+    </div>
+    <div class="tweak-row">
+      <label for="tw-density">Densidad de partículas</label>
+      <input type="range" id="tw-density" min="20" max="130" step="5" />
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/background.js"></script>
+  <script src="js/crm.js"></script>
+  <script src="js/chat.js"></script>
+</body>
+</html>

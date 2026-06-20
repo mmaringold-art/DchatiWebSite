@@ -1,0 +1,12 @@
+node_modules
+.git
+.agents
+*.log
+package.json
+package-lock.json
+skills-lock.json
+.mcp.json
+Dockerfile
+docker-compose.yml
+.dockerignore
+README*
