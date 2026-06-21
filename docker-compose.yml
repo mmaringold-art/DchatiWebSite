@@ -11,7 +11,10 @@
 
 services:
   website:
-    image: ghcr.io/mmaringold-art/dchatiwebsite:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dchati-website:latest
     container_name: dchati-website     # <-- the "Forward Hostname" you enter in NPM
     restart: unless-stopped
     expose:
