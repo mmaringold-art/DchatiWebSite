@@ -129,4 +129,4 @@ Create a **dedicated project** named `website`, point it at this repository, and
 
 ## License
 
-© 2026 Dchati. All rights reserved.
+© 2026 Dchati. All rights reserved. For you, by Us.
