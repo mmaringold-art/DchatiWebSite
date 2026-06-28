@@ -1,0 +1,5 @@
+# Dchati — security contact / responsible disclosure
+Contact: mailto:administration@dchati.com
+Preferred-Languages: es, en
+Canonical: https://www.dchati.com/.well-known/security.txt
+Expires: 2027-01-01T00:00:00.000Z

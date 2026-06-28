@@ -10,6 +10,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY ["Dchati Landing.html", "platform.html", "privacy.html", "terms.html", "/usr/share/nginx/html/"]
 COPY css/ /usr/share/nginx/html/css/
 COPY js/  /usr/share/nginx/html/js/
+COPY .well-known/ /usr/share/nginx/html/.well-known/
 
 # Serve the landing page at "/". The original file is kept too,
 # so platform.html's "← Volver al sitio" link still resolves.

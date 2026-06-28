@@ -5,27 +5,15 @@
    ============================================================ */
 
 /* ------------------------------------------------------------
-   WORKSPACE DIRECTORY
-   Maps an email domain to its company workspace + dashboard URL.
-   In production this resolution happens server-side: your API
-   authenticates the user and returns their organization + the
-   dashboard URL. The user never picks a company manually.
-   To wire the real backend, see authenticate() below.
+   AUTH CONFIG
+   Real authentication via Supabase Auth (see js/supabase-config.js).
+   Passwords are verified server-side by Supabase (hashed with bcrypt).
+   The user's workspace is read from the database under Row-Level
+   Security: the client cannot see workspaces it doesn't belong to.
+   No credentials or workspace directory live in this file.
    ------------------------------------------------------------ */
-const WORKSPACES = {
-  "scopice.com":      { name: "Scopice",        slug: "scopice",  hue: 195, dashboard: "https://app.dchati.com/scopice" },
-  "dentalclinic.com": { name: "Dental Clinic",  slug: "dental",   hue: 168, dashboard: "https://app.dchati.com/dental" },
-  "salon.com":        { name: "Salón Belleza",  slug: "salon",    hue: 322, dashboard: "https://app.dchati.com/salon" },
-};
-
 const CONFIG = {
-  // Demo password accepted for any known domain. Replace the whole
-  // authenticate() body with a real fetch() to your API for production.
-  demoPassword: "demo1234",
-  // When false, the success screen shows the resolved destination but does
-  // NOT navigate (keeps the demo from hitting a non-existent URL).
-  // Set true once your real dashboards are live.
-  performRedirect: false,
+  performRedirect: true,    // real auth -> navigate to the resolved CRM
   redirectDelayMs: 2600,
 };
 
@@ -280,36 +268,33 @@ const CONFIG = {
   email.addEventListener("input", () => setError(email, emailErr, ""));
   pw.addEventListener("input", () => setError(pw, pwErr, ""));
 
-  /* ---- resolve organization from email ---- */
-  function resolveWorkspace(addr) {
-    const domain = addr.split("@")[1]?.toLowerCase().trim();
-    return WORKSPACES[domain] || null;
-  }
+  /* ---- the authentication step (Supabase Auth + RLS workspace lookup) ----
+     1) Supabase verifies the password server-side (bcrypt).
+     2) We read the user's workspace. Row-Level Security guarantees the
+        query can only return a workspace the user is a member of — the
+        client never chooses or sees another company's data. */
+  async function authenticate(addr, secret) {
+    const sb = window.DCHATI_SB;
+    if (!sb || !sb.configured) throw { code: "not-configured" };
 
-  /* ---- the authentication step ----
-     DEMO: validates against the workspace directory + demo password.
-     PRODUCTION: replace the body with a call to your API, e.g.
-
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: addr, password: secret }),
-        });
-        if (!res.ok) throw new Error("invalid");
-        return await res.json(); // { name, slug, hue, dashboard }
-
-     The server decides the organization and dashboard — the client
-     never chooses a company.
-  */
-  function authenticate(addr, secret) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const ws = resolveWorkspace(addr);
-        if (!ws) return reject({ code: "no-org" });
-        if (secret !== CONFIG.demoPassword) return reject({ code: "bad-credentials" });
-        resolve(ws);
-      }, 1100); // simulate network latency
+    const { error: authErr } = await sb.client.auth.signInWithPassword({
+      email: addr,
+      password: secret,
     });
+    if (authErr) throw { code: "bad-credentials" };
+
+    const { data, error } = await sb.client
+      .from("workspaces")
+      .select("name, slug, hue, dashboard_url")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      await sb.client.auth.signOut();
+      throw { code: "no-org" };
+    }
+    return { name: data.name, slug: data.slug, hue: data.hue, dashboard: data.dashboard_url };
   }
 
   form.addEventListener("submit", async (e) => {
@@ -333,8 +318,10 @@ const CONFIG = {
     } catch (err) {
       submit.classList.remove("loading");
       submit.disabled = false;
-      if (err.code === "no-org") {
-        showAlert("No encontramos una empresa asociada a ese correo.");
+      if (err.code === "not-configured") {
+        showAlert("El acceso aún no está disponible. Escríbenos por WhatsApp y te damos de alta.");
+      } else if (err.code === "no-org") {
+        showAlert("No encontramos una empresa asociada a esta cuenta.");
         setError(email, emailErr, "");
         email.focus();
       } else {
@@ -387,15 +374,8 @@ const CONFIG = {
   const EYE_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13 13 0 0 1-2.16 2.92M6.1 6.1A13 13 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.06-.94M1 1l22 22"/><path d="M9.5 9.5a3 3 0 0 0 4.2 4.2"/></svg>';
   toggle.innerHTML = EYE;
 
-  /* ---- demo account autofill ---- */
-  document.querySelectorAll(".demo-acct").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      email.value = btn.dataset.email;
-      pw.value = CONFIG.demoPassword;
-      setError(email, emailErr, "");
-      setError(pw, pwErr, "");
-      clearAlert();
-      submit.focus();
-    });
+  /* ---- inert links (e.g. "forgot password") never navigate ---- */
+  document.querySelectorAll("[data-noop]").forEach((el) => {
+    el.addEventListener("click", (e) => e.preventDefault());
   });
 })();

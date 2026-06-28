@@ -55,7 +55,7 @@
               <input type="checkbox" name="remember" />
               Recordarme
             </label>
-            <a href="#" class="link-quiet" onclick="event.preventDefault()">¿Olvidaste tu contraseña?</a>
+            <a href="#" class="link-quiet" data-noop>¿Olvidaste tu contraseña?</a>
           </div>
 
           <button type="submit" class="btn-submit" id="submit-btn">
@@ -64,27 +64,6 @@
           </button>
         </form>
 
-        <details class="demo">
-          <summary>Cuentas de demostración</summary>
-          <div class="demo-list">
-            <button type="button" class="demo-acct" data-email="ana@scopice.com">
-              <span class="pip" style="background: oklch(0.78 0.15 195)">S</span>
-              <span class="meta"><b>Scopice</b><span>ana@scopice.com</span></span>
-              <span class="arrow">→ Scopice CRM</span>
-            </button>
-            <button type="button" class="demo-acct" data-email="dr.lopez@dentalclinic.com">
-              <span class="pip" style="background: oklch(0.78 0.15 168)">D</span>
-              <span class="meta"><b>Dental Clinic</b><span>dr.lopez@dentalclinic.com</span></span>
-              <span class="arrow">→ Dental CRM</span>
-            </button>
-            <button type="button" class="demo-acct" data-email="maria@salon.com">
-              <span class="pip" style="background: oklch(0.78 0.15 322)">S</span>
-              <span class="meta"><b>Salón Belleza</b><span>maria@salon.com</span></span>
-              <span class="arrow">→ Salon CRM</span>
-            </button>
-          </div>
-          <p class="demo-note">Toca una cuenta para autocompletar. Contraseña: <code>demo1234</code></p>
-        </details>
       </div>
 
       <div class="pane-foot">
@@ -125,6 +104,8 @@
     </div>
   </div>
 
+  <script src="js/supabase.js"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="js/platform.js"></script>
 </body>
 </html>
