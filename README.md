@@ -62,8 +62,8 @@ A few values are baked into the static files and must be set before launch:
 
 | What | Where | Notes |
 |------|-------|-------|
-| **WhatsApp number** | `DCHATI_CONFIG.whatsappNumber` in `Dchati Landing.html` | Country code + number, no `+`. Until set, "Hablar por WhatsApp" CTAs fall back to the `#contacto` anchor. |
-| **Login behavior** | `CONFIG` in `js/platform.js` | Demo login (`demoPassword`, `WORKSPACES`). Replace `authenticate()` with a real API call before production; keep `performRedirect:false` until the real dashboards exist. |
+| **WhatsApp number** | `whatsappNumber` in `js/config.js` | Country code + number, no `+`. Until set, "Hablar por WhatsApp" CTAs fall back to the `#contacto` anchor. |
+| **Login (Supabase Auth)** | `js/supabase-config.js` + `supabase/schema.sql` | Real auth with Row-Level Security. Add your project URL + anon key and run the schema — see [SUPABASE_SETUP.md](SUPABASE_SETUP.md). Until configured, the login degrades gracefully. |
 | **Legal entity details** | `privacy.html`, `terms.html` | Replace every `[PLACEHOLDER]` and have the documents reviewed by a professional before publishing. |
 
 > ⚠️ The login and CRM sections use **fictitious demo data** for illustration only.
@@ -129,4 +129,4 @@ Create a **dedicated project** named `website`, point it at this repository, and
 
 ## License
 
-© 2026 Dchati. All rights reserved. For you, by Us.
+© 2026 Dchati. All rights reserved. 
