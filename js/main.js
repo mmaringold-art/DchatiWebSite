@@ -1,17 +1,9 @@
 /* Dchati landing — tweaks, scroll effects, micro-interactions */
 (function () {
-  // ---------- State (defaults from inline config, overridden by localStorage) ----------
-  const saved = JSON.parse(localStorage.getItem("dchati-tweaks") || "{}");
-  const state = Object.assign({}, window.DCHATI_CONFIG, saved);
+  // ---------- State (fixed from inline config) ----------
+  const DEFAULTS = { accentHue: 245, particleDensity: 20, whatsappNumber: "" };
+  const state = Object.assign({}, DEFAULTS, window.DCHATI_CONFIG || {});
   window.DCHATI_STATE = state;
-
-  function persist() {
-    localStorage.setItem("dchati-tweaks", JSON.stringify({
-      accentHue: state.accentHue,
-      particleDensity: state.particleDensity,
-      whatsappNumber: state.whatsappNumber,
-    }));
-  }
 
   function applyHue() {
     document.documentElement.style.setProperty("--accent-h", state.accentHue);
@@ -27,37 +19,27 @@
   applyHue();
   applyWhatsApp();
 
-  // ---------- Tweaks panel ----------
-  const toggle = document.querySelector(".tweaks-toggle");
-  const panel = document.querySelector(".tweaks-panel");
+  // Clear any stale tweak settings saved by earlier visits.
+  try { localStorage.removeItem("dchati-tweaks"); } catch (e) {}
 
-  toggle.addEventListener("click", () => panel.classList.toggle("open"));
-
-  const hueInput = document.getElementById("tw-hue");
-  const densInput = document.getElementById("tw-density");
-  const waInput = document.getElementById("tw-wa");
-
-  hueInput.value = state.accentHue;
-  densInput.value = state.particleDensity;
-  waInput.value = state.whatsappNumber || "";
-
-  hueInput.addEventListener("input", () => {
-    state.accentHue = parseInt(hueInput.value, 10);
-    applyHue();
-    persist();
-  });
-
-  densInput.addEventListener("input", () => {
-    state.particleDensity = parseInt(densInput.value, 10);
-    window.dispatchEvent(new Event("dchati:density-changed"));
-    persist();
-  });
-
-  waInput.addEventListener("change", () => {
-    state.whatsappNumber = waInput.value.trim();
-    applyWhatsApp();
-    persist();
-  });
+  // ---------- Mobile nav (no effect on desktop — toggle is hidden there) ----------
+  const navToggle = document.querySelector(".nav-toggle");
+  const navLinks = document.getElementById("nav-links");
+  const navScrim = document.querySelector(".nav-scrim");
+  if (navToggle && navLinks) {
+    const setNav = (open) => {
+      navLinks.classList.toggle("open", open);
+      navToggle.classList.toggle("open", open);
+      if (navScrim) navScrim.classList.toggle("open", open);
+      document.body.classList.toggle("nav-open", open);
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      navToggle.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
+    };
+    navToggle.addEventListener("click", () => setNav(!navLinks.classList.contains("open")));
+    if (navScrim) navScrim.addEventListener("click", () => setNav(false));
+    navLinks.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setNav(false)));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setNav(false); });
+  }
 
   // ---------- Scroll: progress bar + compact nav ----------
   const progress = document.querySelector(".scroll-progress");

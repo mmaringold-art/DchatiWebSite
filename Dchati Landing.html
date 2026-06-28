@@ -11,13 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/crm.css" />
-  <script>
-    const DCHATI_CONFIG = /*EDITMODE-BEGIN*/{
-      "accentHue": 195,
-      "particleDensity": 70,
-      "whatsappNumber": ""
-    }/*EDITMODE-END*/;
-  </script>
+  <script src="js/config.js"></script>
 </head>
 <body>
 
@@ -28,7 +22,10 @@
   <nav class="nav">
     <div class="nav-inner">
       <a class="logo" href="#">Dchati<span class="dot">.</span></a>
-      <div class="nav-links">
+      <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links" id="nav-links">
         <a href="#funciones">Funciones</a>
         <a href="#casos">Casos de uso</a>
         <a href="platform.html" class="nav-platform">Plataforma</a>
@@ -36,12 +33,14 @@
       </div>
     </div>
   </nav>
+  <div class="nav-scrim" aria-hidden="true"></div>
 
   <header class="wrap hero">
     <div>
       <span class="kicker">Plataforma de IA para WhatsApp</span>
       <h1>Tu WhatsApp <em>atiende solo</em>. Tu negocio crece.</h1>
-      <p class="lead">Dchati responde a tus clientes, califica leads, agenda citas y hace seguimiento con inteligencia artificial — mientras un CRM centraliza contactos, conversaciones y todo tu equipo.</p>
+      <p class="lead lead-desktop">Dchati responde a tus clientes, califica leads, agenda citas y hace seguimiento con inteligencia artificial — mientras un CRM centraliza contactos, conversaciones y todo tu equipo.</p>
+      <p class="lead lead-mobile">Tu WhatsApp responde, agenda y vende con IA. Todo en un CRM, siempre contigo.</p>
       <div class="hero-actions">
         <a href="#" class="btn btn-primary wa-link">Hablar por WhatsApp</a>
         <a href="#funciones" class="btn btn-ghost">Ver funciones</a>
@@ -92,22 +91,26 @@
         <div class="card reveal">
           <span class="num">01</span>
           <h3>Asistente con IA</h3>
-          <p>Responde preguntas, califica leads y conversa con tus clientes de forma natural, las 24 horas, todos los días.</p>
+          <p class="desc-full">Responde preguntas, califica leads y conversa con tus clientes de forma natural, las 24 horas, todos los días.</p>
+          <p class="desc-short">Responde y califica leads 24/7, solo.</p>
         </div>
         <div class="card reveal">
           <span class="num">02</span>
           <h3>CRM centralizado</h3>
-          <p>Contactos, conversaciones, historial, reservas y campañas en un solo panel, compartido con todo tu equipo.</p>
+          <p class="desc-full">Contactos, conversaciones, historial, reservas y campañas en un solo panel, compartido con todo tu equipo.</p>
+          <p class="desc-short">Contactos, chats e historial en un panel.</p>
         </div>
         <div class="card reveal">
           <span class="num">03</span>
           <h3>Agenda automática</h3>
-          <p>Tus clientes reservan citas directamente en el chat. Sin llamadas, sin planillas, sin idas y vueltas.</p>
+          <p class="desc-full">Tus clientes reservan citas directamente en el chat. Sin llamadas, sin planillas, sin idas y vueltas.</p>
+          <p class="desc-short">Tus clientes reservan en el chat.</p>
         </div>
         <div class="card reveal">
           <span class="num">04</span>
           <h3>Seguimientos que venden</h3>
-          <p>Recordatorios y campañas automáticas que retoman conversaciones frías y las convierten en ventas.</p>
+          <p class="desc-full">Recordatorios y campañas automáticas que retoman conversaciones frías y las convierten en ventas.</p>
+          <p class="desc-short">Recordatorios y campañas que cierran ventas.</p>
         </div>
       </div>
     </div>
@@ -115,10 +118,15 @@
 
   <section id="crm">
     <div class="wrap">
-      <div class="section-head reveal">
+      <div class="section-head reveal crm-head-desktop">
         <span class="eyebrow">Demo interactiva</span>
         <h2>Explora la plataforma, no una captura</h2>
         <p>Esto no es una imagen. Navega un Dchati de ejemplo y siente cómo se gestiona un negocio entero desde un solo lugar.</p>
+      </div>
+      <div class="section-head reveal crm-head-mobile">
+        <span class="eyebrow">La plataforma</span>
+        <h2>Todo tu negocio, en tu bolsillo</h2>
+        <p>Contactos, conversaciones, IA y métricas — centralizados y siempre contigo.</p>
       </div>
 
       <div class="crm-window reveal" role="group" aria-label="Demo interactiva de la plataforma Dchati">
@@ -158,7 +166,69 @@
         </div>
       </div>
 
-      <p class="crm-cta-row reveal">¿Te gusta lo que ves? <a href="#" class="wa-link">Solicita tu demo personalizada →</a></p>
+      <div class="crm-mobile reveal" aria-label="Vista previa de la plataforma Dchati en móvil">
+        <div class="cmob-phone">
+          <div class="cmob-notch" aria-hidden="true"></div>
+          <div class="cmob-screen">
+            <header class="cmob-top">
+              <div class="cmob-ws">
+                <span class="cmob-ws-avatar">S</span>
+                <div>
+                  <b>Scopice</b>
+                  <small>Plan Business</small>
+                </div>
+              </div>
+              <span class="cmob-live"><i></i>en vivo</span>
+            </header>
+
+            <div class="cmob-stats">
+              <div class="cmob-stat"><b>128</b><span>Chats</span></div>
+              <div class="cmob-stat"><b>34</b><span>Leads</span></div>
+              <div class="cmob-stat"><b>12</b><span>Citas</span></div>
+            </div>
+
+            <div class="cmob-ai">
+              <span class="cmob-ai-dot" aria-hidden="true"></span>
+              La IA respondió el <b>87%</b> de los chats hoy
+            </div>
+
+            <ul class="cmob-list">
+              <li>
+                <span class="cmob-av" style="--a:150">M</span>
+                <div class="cmob-meta">
+                  <div class="cmob-row"><b>María F.</b><time>9:24</time></div>
+                  <p>Perfecto, reservo el martes 👍</p>
+                </div>
+                <span class="cmob-tag">IA</span>
+              </li>
+              <li>
+                <span class="cmob-av" style="--a:25">J</span>
+                <div class="cmob-meta">
+                  <div class="cmob-row"><b>Javier R.</b><time>9:10</time></div>
+                  <p>¿Tienen disponibilidad esta semana?</p>
+                </div>
+                <span class="cmob-tag">IA</span>
+              </li>
+              <li>
+                <span class="cmob-av" style="--a:280">L</span>
+                <div class="cmob-meta">
+                  <div class="cmob-row"><b>Lucía M.</b><time>8:47</time></div>
+                  <p>Gracias por el recordatorio</p>
+                </div>
+              </li>
+            </ul>
+
+            <nav class="cmob-tabs" aria-hidden="true">
+              <span class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.8-.8L3 21l1-4.2A8.4 8.4 0 1 1 21 11.5z"/></svg></span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M5 12H2M22 12h-3"/><circle cx="12" cy="12" r="4"/></svg></span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <p class="crm-cta-row reveal">¿Te gusta lo que ves? <a href="#" class="wa-link">Solicita tu demo →</a></p>
     </div>
   </section>
 
@@ -209,33 +279,37 @@
   </section>
 
   <footer>
-    <div class="wrap foot-inner">
-      <span>© 2026 Dchati — Plataforma de comunicación y gestión con IA</span>
-      <nav class="foot-links">
-        <a href="privacy.html">Privacidad</a>
-        <a href="terms.html">Términos</a>
-        <a href="#" class="wa-link" style="color: var(--accent); text-decoration: none;">WhatsApp</a>
-      </nav>
+    <div class="wrap foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="#">Dchati<span class="dot">.</span></a>
+        <p>Plataforma de comunicación y gestión con IA para WhatsApp.</p>
+      </div>
+
+      <div class="foot-col">
+        <h4>Contacto</h4>
+        <address>
+          <a href="tel:+1786550468">+1 (786) 550468</a>
+          <a href="mailto:administration@dchati.com">administration@dchati.com</a>
+          <span>10400 Griffin Road, Suite 302<br />Cooper City, FL 33328, EE. UU.</span>
+        </address>
+      </div>
+
+      <div class="foot-col">
+        <h4>Enlaces</h4>
+        <nav class="foot-links">
+          <a href="#funciones">Funciones</a>
+          <a href="platform.html">Plataforma</a>
+          <a href="privacy.html">Privacidad</a>
+          <a href="terms.html">Términos</a>
+          <a href="#" class="wa-link foot-wa">WhatsApp</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="wrap foot-bottom">
+      <span>© 2026 Dchati. Todos los derechos reservados.</span>
     </div>
   </footer>
-
-  <button class="tweaks-toggle" type="button">Tweaks</button>
-  <div class="tweaks-panel">
-    <h4>Tweaks</h4>
-    <div class="tweak-row">
-      <label for="tw-wa">Número de WhatsApp</label>
-      <input type="text" id="tw-wa" placeholder="Ej: 5215512345678" inputmode="numeric" />
-      <div class="tweak-hint">Código de país + número, sin "+" ni espacios.</div>
-    </div>
-    <div class="tweak-row">
-      <label for="tw-hue">Tono de acento</label>
-      <input type="range" id="tw-hue" min="150" max="330" step="1" />
-    </div>
-    <div class="tweak-row">
-      <label for="tw-density">Densidad de partículas</label>
-      <input type="range" id="tw-density" min="20" max="130" step="5" />
-    </div>
-  </div>
 
   <script src="js/main.js"></script>
   <script src="js/background.js"></script>

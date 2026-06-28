@@ -151,7 +151,12 @@
     const r = section.getBoundingClientRect();
     const secCenter = r.top + r.height / 2;
     const vpCenter = window.innerHeight / 2;
-    const d = Math.abs(secCenter - vpCenter) / (window.innerHeight * 0.55);
+    const offset = Math.abs(secCenter - vpCenter);
+    // Hold the logo fully formed across a band (plateau), then fade out.
+    // Wider band + longer falloff = the DC lingers instead of flashing by.
+    const plateau = window.innerHeight * 0.34;   // fully-formed zone (each side)
+    const falloff = window.innerHeight * 0.85;   // fade distance beyond the band
+    const d = Math.max(0, offset - plateau) / falloff;
     return smooth(1 - Math.min(1, d));
   }
 
