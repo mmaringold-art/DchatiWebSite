@@ -22,19 +22,23 @@ Served at **www.dchati.com**. The CRM/app lives separately at **app.dchati.com**
 ```
 .
 ├── Dchati Landing.html     # Home page (served as / via index.html in the image)
-├── platform.html           # Login / workspace entry (demo auth)
+├── platform.html           # Login entry point (Keycloak SSO)
+├── dashboard.html          # OIDC callback (served at /dashboard) + workspace routing
 ├── privacy.html            # Privacy policy (RGPD/LSSI template — see notes)
 ├── terms.html              # Terms & conditions (template — see notes)
 ├── css/
 │   ├── styles.css          # Landing + shared tokens, nav, aurora, legal pages
 │   ├── crm.css             # Embedded interactive CRM demo
-│   └── platform.css        # Login page
+│   └── platform.css        # Login + callback pages
 ├── js/
 │   ├── main.js             # Tweaks, scroll effects, CTA wiring
 │   ├── background.js       # Light-beam field + scroll-driven "DC" monogram
 │   ├── chat.js             # Interactive WhatsApp chat demo
 │   ├── crm.js              # Interactive CRM demo (dashboard, contacts, etc.)
-│   └── platform.js         # AI core animation + demo login flow
+│   ├── auth-config.js      # Keycloak public config (no secrets)
+│   ├── auth.js             # OIDC client: Authorization Code + PKCE S256
+│   ├── platform.js         # AI core animation + login entry point
+│   └── dashboard.js        # Code exchange + workspace routing
 ├── Dockerfile              # nginx static image
 ├── docker-compose.yml      # Hostinger / NPM deployment
 ├── nginx.conf              # Server config (gzip, caching, /healthz)
@@ -63,10 +67,14 @@ A few values are baked into the static files and must be set before launch:
 | What | Where | Notes |
 |------|-------|-------|
 | **WhatsApp number** | `whatsappNumber` in `js/config.js` | Country code + number, no `+`. Until set, "Hablar por WhatsApp" CTAs fall back to the `#contacto` anchor. |
-| **Login (Supabase Auth)** | `js/supabase-config.js` + `supabase/schema.sql` | Real auth with Row-Level Security. Add your project URL + anon key and run the schema — see [SUPABASE_SETUP.md](SUPABASE_SETUP.md). Until configured, the login degrades gracefully. |
+| **Login (Keycloak SSO)** | `js/auth-config.js` | Authorization Code + PKCE (S256) against the `dchati` realm. Public client, no secret. Redirect targets are hardcoded — see [KEYCLOAK_SETUP.md](KEYCLOAK_SETUP.md). |
 | **Legal entity details** | `privacy.html`, `terms.html` | Replace every `[PLACEHOLDER]` and have the documents reviewed by a professional before publishing. |
 
-> ⚠️ The login and CRM sections use **fictitious demo data** for illustration only.
+> ⚠️ Two items still block the end-to-end login — **workspace routing** and the
+> **`www` vs apex domain** question. Both are written up in
+> [KEYCLOAK_SETUP.md](KEYCLOAK_SETUP.md).
+
+> ⚠️ The CRM section on the landing page uses **fictitious demo data** for illustration only.
 
 ---
 

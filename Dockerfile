@@ -7,7 +7,7 @@ FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy only the static assets (keeps the image clean — no node_modules, no Docker files)
-COPY ["Dchati Landing.html", "platform.html", "privacy.html", "terms.html", "/usr/share/nginx/html/"]
+COPY ["Dchati Landing.html", "platform.html", "dashboard.html", "privacy.html", "terms.html", "/usr/share/nginx/html/"]
 COPY css/ /usr/share/nginx/html/css/
 COPY js/  /usr/share/nginx/html/js/
 COPY .well-known/ /usr/share/nginx/html/.well-known/

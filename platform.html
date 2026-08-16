@@ -32,37 +32,29 @@
           <span></span>
         </div>
 
-        <form id="login-form" novalidate>
-          <div class="field">
-            <label for="email">Correo de trabajo</label>
-            <div class="input-wrap">
-              <input type="email" id="email" name="email" placeholder="tu@empresa.com" autocomplete="email" required aria-describedby="email-error" />
-            </div>
-            <span class="field-error" id="email-error" aria-live="polite"></span>
-          </div>
-
-          <div class="field">
-            <label for="password">Contraseña</label>
-            <div class="input-wrap has-toggle">
-              <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required aria-describedby="password-error" />
-              <button type="button" class="toggle-pw" aria-label="Mostrar contraseña" aria-pressed="false"></button>
-            </div>
-            <span class="field-error" id="password-error" aria-live="polite"></span>
-          </div>
-
-          <div class="form-row">
-            <label class="remember">
-              <input type="checkbox" name="remember" />
-              Recordarme
-            </label>
-            <a href="#" class="link-quiet" data-noop>¿Olvidaste tu contraseña?</a>
-          </div>
-
-          <button type="submit" class="btn-submit" id="submit-btn">
+        <!-- Signed out: hand the user over to Keycloak (Authorization Code + PKCE).
+             Credentials are typed on auth.dchati.com, never here. -->
+        <div id="view-signed-out" hidden>
+          <button type="button" class="btn-submit" id="login-btn">
             <span class="label-default">Entrar a la plataforma</span>
             <span class="spinner" aria-hidden="true"></span>
           </button>
-        </form>
+          <p class="auth-note">
+            Te llevamos a <b>auth.dchati.com</b> para verificar tu identidad. Ahí gestionás también tu contraseña.
+          </p>
+        </div>
+
+        <!-- Signed in: session restored from a previous visit. -->
+        <div id="view-signed-in" hidden>
+          <p class="session-line">Sesión activa como <b id="session-user">tu cuenta</b></p>
+          <button type="button" class="btn-submit" id="continue-btn">
+            <span class="label-default">Continuar a la plataforma</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+          <p class="auth-note">
+            <button type="button" class="btn-linkish" id="logout-btn">Cerrar sesión</button>
+          </p>
+        </div>
 
       </div>
 
@@ -91,21 +83,8 @@
 
   </main>
 
-  <!-- ============ Success / routing overlay ============ -->
-  <div class="success" id="success" role="dialog" aria-modal="true" aria-labelledby="success-name">
-    <div class="success-card">
-      <div class="success-badge" id="success-badge">D</div>
-      <div class="status-line">Acceso concedido</div>
-      <h2>Bienvenido a <span id="success-name">tu workspace</span></h2>
-      <p>Estamos abriendo el CRM de tu empresa…</p>
-      <div class="dest" id="success-dest">app.dchati.com</div>
-      <div class="success-progress"><i id="success-bar"></i></div>
-      <a class="btn-enter" id="enter-btn" href="#">Entrar ahora →</a>
-    </div>
-  </div>
-
-  <script src="js/supabase.js"></script>
-  <script src="js/supabase-config.js"></script>
+  <script src="js/auth-config.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/platform.js"></script>
 </body>
 </html>

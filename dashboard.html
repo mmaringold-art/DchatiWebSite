@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso — Plataforma Dchati</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0f161d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/platform.css" />
+</head>
+<body class="page-callback">
+
+  <div class="callback-brandbar">
+    <a class="logo" href="Dchati Landing.html">Dchati<span class="dot">.</span></a>
+  </div>
+
+  <!-- Same success card the login page has always shown after a
+       successful sign-in — now driven by the Keycloak result. -->
+  <div class="success show" role="status" aria-live="polite">
+    <div class="success-card">
+      <div class="success-badge" id="badge">D</div>
+      <div class="status-line" id="status-line">Verificando acceso</div>
+      <h2 id="title">Un momento…</h2>
+      <p id="message">Estamos validando tu identidad con Keycloak.</p>
+
+      <div class="dest" id="dest" hidden></div>
+      <div class="success-progress" id="progress" hidden><i id="bar"></i></div>
+
+      <a class="btn-enter" id="enter-btn" href="#" hidden>Entrar ahora →</a>
+
+      <p class="card-actions">
+        <a class="btn-linkish" id="retry-link" href="platform.html" hidden>Volver a intentar</a>
+        <button type="button" class="btn-linkish" id="logout-btn" hidden>Cerrar sesión</button>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/auth-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

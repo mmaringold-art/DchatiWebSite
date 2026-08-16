@@ -1,6 +1,17 @@
-# Supabase Auth setup (login de la plataforma)
+> # ⚠️ OBSOLETO — el login ya no usa Supabase
+>
+> La autenticación de la plataforma se migró a **Keycloak** (Authorization Code + PKCE).
+> Ver **[KEYCLOAK_SETUP.md](KEYCLOAK_SETUP.md)**.
+>
+> `js/supabase.js` y `js/supabase-config.js` fueron eliminados. Este documento y
+> `supabase/schema.sql` se conservan solo como **referencia del modelo de datos de
+> workspaces** (`workspaces` + `memberships`), que sigue siendo la descripción más
+> completa de la relación usuario↔empresa y hace falta para decidir el ruteo de
+> tenants — ver "Pendiente 1" en KEYCLOAK_SETUP.md.
 
-El login de `platform.html` ya usa **Supabase Auth** con **Row-Level Security**. Para activarlo, hacé esto una sola vez:
+# Supabase Auth setup (login de la plataforma) — histórico
+
+El login de `platform.html` usaba **Supabase Auth** con **Row-Level Security**. Se activaba así:
 
 ## 1. Crear el proyecto
 1. Entrá a [supabase.com](https://supabase.com) → **New project**.

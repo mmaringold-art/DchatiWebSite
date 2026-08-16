@@ -1,21 +1,17 @@
 /* ============================================================
    Dchati — Plataforma (login)
    1) Floating AI core (mouse-reactive particle sphere + neural rings)
-   2) Auth flow that resolves email/organization -> company CRM
+   2) Entry point into the Keycloak OIDC flow (see js/auth.js)
    ============================================================ */
 
 /* ------------------------------------------------------------
-   AUTH CONFIG
-   Real authentication via Supabase Auth (see js/supabase-config.js).
-   Passwords are verified server-side by Supabase (hashed with bcrypt).
-   The user's workspace is read from the database under Row-Level
-   Security: the client cannot see workspaces it doesn't belong to.
-   No credentials or workspace directory live in this file.
+   AUTH
+   Authentication is handled entirely by Keycloak at auth.dchati.com
+   using Authorization Code + PKCE (S256). This page never sees a
+   password, never holds a client secret, and never decides which
+   workspace a user may open — that lives in the ID token Keycloak
+   signs. See js/auth.js.
    ------------------------------------------------------------ */
-const CONFIG = {
-  performRedirect: true,    // real auth -> navigate to the resolved CRM
-  redirectDelayMs: 2600,
-};
 
 /* ============================================================
    PART 1 — AI CORE
@@ -223,159 +219,72 @@ const CONFIG = {
 })();
 
 /* ============================================================
-   PART 2 — AUTH + ROUTING
+   PART 2 — KEYCLOAK ENTRY POINT
+   This page is a gate, not an authenticator: it either starts the
+   OIDC flow or shows the session it restored. The code exchange and
+   the workspace routing happen on /dashboard (js/dashboard.js).
    ============================================================ */
 (function auth() {
-  const form = document.getElementById("login-form");
-  const email = document.getElementById("email");
-  const pw = document.getElementById("password");
-  const emailErr = document.getElementById("email-error");
-  const pwErr = document.getElementById("password-error");
-  const alert = document.getElementById("form-alert");
-  const submit = document.getElementById("submit-btn");
-  const toggle = document.querySelector(".toggle-pw");
+  const alertBox = document.getElementById("form-alert");
+  const signedOut = document.getElementById("view-signed-out");
+  const signedIn = document.getElementById("view-signed-in");
+  const loginBtn = document.getElementById("login-btn");
+  const continueBtn = document.getElementById("continue-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const userEl = document.getElementById("session-user");
 
-  // show/hide password
-  toggle.addEventListener("click", () => {
-    const showing = pw.type === "text";
-    pw.type = showing ? "password" : "text";
-    toggle.setAttribute("aria-label", showing ? "Mostrar contraseña" : "Ocultar contraseña");
-    toggle.setAttribute("aria-pressed", String(!showing));
-    toggle.innerHTML = showing ? EYE : EYE_OFF;
-    pw.focus();
-  });
+  function showAlert(msg, tone) {
+    alertBox.querySelector("span").textContent = msg;
+    alertBox.classList.toggle("ok", tone === "ok");
+    alertBox.classList.add("show");
+  }
+  function clearAlert() { alertBox.classList.remove("show"); }
 
-  function setError(input, errEl, msg) {
-    if (msg) {
-      input.setAttribute("aria-invalid", "true");
-      errEl.textContent = msg;
-      errEl.classList.add("show");
-    } else {
-      input.removeAttribute("aria-invalid");
-      errEl.classList.remove("show");
-    }
+  function busy(btn, on) {
+    btn.classList.toggle("loading", on);
+    btn.disabled = on;
   }
 
-  function showAlert(msg) {
-    alert.querySelector("span").textContent = msg;
-    alert.classList.add("show");
-  }
-  function clearAlert() { alert.classList.remove("show"); }
-
-  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  // clear errors as the user fixes them
-  email.addEventListener("input", () => setError(email, emailErr, ""));
-  pw.addEventListener("input", () => setError(pw, pwErr, ""));
-
-  /* ---- the authentication step (Supabase Auth + RLS workspace lookup) ----
-     1) Supabase verifies the password server-side (bcrypt).
-     2) We read the user's workspace. Row-Level Security guarantees the
-        query can only return a workspace the user is a member of — the
-        client never chooses or sees another company's data. */
-  async function authenticate(addr, secret) {
-    const sb = window.DCHATI_SB;
-    if (!sb || !sb.configured) throw { code: "not-configured" };
-
-    const { error: authErr } = await sb.client.auth.signInWithPassword({
-      email: addr,
-      password: secret,
-    });
-    if (authErr) throw { code: "bad-credentials" };
-
-    const { data, error } = await sb.client
-      .from("workspaces")
-      .select("name, slug, hue, dashboard_url")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !data) {
-      await sb.client.auth.signOut();
-      throw { code: "no-org" };
-    }
-    return { name: data.name, slug: data.slug, hue: data.hue, dashboard: data.dashboard_url };
+  function show(view) {
+    signedOut.hidden = view !== "out";
+    signedIn.hidden = view !== "in";
   }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  /* ---- start the Authorization Code + PKCE flow ---- */
+  function startLogin(btn) {
     clearAlert();
-
-    const addr = email.value.trim();
-    const secret = pw.value;
-    let ok = true;
-
-    if (!emailRe.test(addr)) { setError(email, emailErr, "Introduce un correo válido."); ok = false; }
-    if (secret.length < 6) { setError(pw, pwErr, "La contraseña debe tener al menos 6 caracteres."); ok = false; }
-    if (!ok) { (addr && !emailRe.test(addr) ? email : pw).focus(); return; }
-
-    submit.classList.add("loading");
-    submit.disabled = true;
-
-    try {
-      const ws = await authenticate(addr, secret);
-      launchWorkspace(ws);
-    } catch (err) {
-      submit.classList.remove("loading");
-      submit.disabled = false;
-      if (err.code === "not-configured") {
-        showAlert("El acceso aún no está disponible. Escríbenos por WhatsApp y te damos de alta.");
-      } else if (err.code === "no-org") {
-        showAlert("No encontramos una empresa asociada a esta cuenta.");
-        setError(email, emailErr, "");
-        email.focus();
-      } else {
-        showAlert("Correo o contraseña incorrectos. Inténtalo de nuevo.");
-        pw.focus();
-        pw.select();
-      }
-    }
-  });
-
-  /* ---- success: recolor the core to the company hue, show overlay,
-          then route to that company's CRM ---- */
-  function launchWorkspace(ws) {
-    if (window.__setCoreHue && typeof ws.hue === "number") {
-      window.__setCoreHue(ws.hue);
-      document.querySelector(".pane-right").style.setProperty("--hue-shift", (ws.hue - 250) + "deg");
-    }
-
-    const overlay = document.getElementById("success");
-    const badge = document.getElementById("success-badge");
-    const nameEl = document.getElementById("success-name");
-    const destEl = document.getElementById("success-dest");
-    const bar = document.getElementById("success-bar");
-    const enterBtn = document.getElementById("enter-btn");
-
-    badge.textContent = ws.name.charAt(0).toUpperCase();
-    badge.style.background = `oklch(0.78 0.15 ${ws.hue})`;
-    badge.style.color = "oklch(0.14 0.03 250)";
-    nameEl.textContent = ws.name;
-    const url = ws.dashboard || ("https://app.dchati.com/" + ws.slug);
-    destEl.textContent = url.replace(/^https?:\/\//, "");
-    enterBtn.href = url;
-
-    overlay.classList.add("show");
-    enterBtn.focus();
-
-    // progress bar -> redirect
-    const dur = CONFIG.redirectDelayMs;
-    const start = performance.now();
-    (function tick(now) {
-      const p = Math.min(1, (now - start) / dur);
-      bar.style.width = (p * 100) + "%";
-      if (p < 1) requestAnimationFrame(tick);
-      else if (CONFIG.performRedirect) window.location.href = url;
-    })(start);
+    busy(btn, true);
+    DchatiAuth.login().catch((err) => {
+      busy(btn, false);
+      showAlert(err.message || DchatiAuth.messages.generic);
+    });
   }
 
-  // icons
-  const EYE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
-  const EYE_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13 13 0 0 1-2.16 2.92M6.1 6.1A13 13 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.06-.94M1 1l22 22"/><path d="M9.5 9.5a3 3 0 0 0 4.2 4.2"/></svg>';
-  toggle.innerHTML = EYE;
+  loginBtn.addEventListener("click", () => startLogin(loginBtn));
 
-  /* ---- inert links (e.g. "forgot password") never navigate ---- */
-  document.querySelectorAll("[data-noop]").forEach((el) => {
-    el.addEventListener("click", (e) => e.preventDefault());
+  /* Already signed in -> go to the routing page, which decides where
+     this user's workspace actually is. */
+  continueBtn.addEventListener("click", () => {
+    busy(continueBtn, true);
+    window.location.assign("dashboard.html");
   });
+
+  logoutBtn.addEventListener("click", () => DchatiAuth.logout());
+
+  /* ---- session restoration on load ----
+     A refresh of an expired access token happens inside getSession(),
+     so a returning user lands straight on the signed-in view. */
+  show("out");
+  DchatiAuth.getSession()
+    .then((session) => {
+      if (!session) return show("out");
+      userEl.textContent = DchatiAuth.displayName(session);
+      show("in");
+    })
+    .catch(() => show("out"));
+
+  /* Keycloak sends the user back here after logout; say so plainly. */
+  if (new URLSearchParams(window.location.search).has("logout")) {
+    showAlert("Cerraste sesión correctamente.", "ok");
+  }
 })();
