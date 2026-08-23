@@ -11,7 +11,7 @@ El sitio sigue siendo estático: sin framework, sin build, sin runtime de Node.
 
 | Archivo | Rol |
 |---------|-----|
-| `js/auth-config.js` | Configuración pública. URLs de redirección **hardcodeadas**. Sin secretos. |
+| `js/auth-config.js` | Configuración pública: cliente, scopes, URLs de redirección **hardcodeadas** y el registro `workspaces`. Sin secretos. |
 | `js/auth.js` | Cliente OIDC: PKCE, intercambio de código, refresh, logout, resolución de workspace. |
 | `platform.html` + `js/platform.js` | Puerta de entrada. Restaura sesión o manda a Keycloak. |
 | `dashboard.html` + `js/dashboard.js` | Callback: intercambia el código y decide el destino. |
@@ -19,7 +19,8 @@ El sitio sigue siendo estático: sin framework, sin build, sin runtime de Node.
 Flujo:
 
 ```
-platform.html  ──login()──▶  auth.dchati.com/.../auth?code_challenge=…&code_challenge_method=S256
+platform.html  ──login()──▶  auth.dchati.com/.../auth?scope=openid+organization
+                                                     &code_challenge_method=S256
                                         │
                                         ▼
                         dchati.com/dashboard?code=…&state=…
@@ -27,7 +28,7 @@ platform.html  ──login()──▶  auth.dchati.com/.../auth?code_challenge=�
                     POST /token  (code + code_verifier original)
                                         │
                                         ▼
-                     ID token  ──▶  destino del workspace
+                 ID token  ──claim organization──▶  CRM de la empresa
 ```
 
 ## Lo que NO hay que hacer
@@ -35,7 +36,7 @@ platform.html  ──login()──▶  auth.dchati.com/.../auth?code_challenge=�
 - **No** poner un client secret en el front. El cliente es público: un secreto en el navegador no es un secreto.
 - **No** desactivar PKCE ni bajar a `plain`. El challenge se genera con `crypto.subtle` (S256).
 - **No** usar implicit flow.
-- **No** agregar comodines (`*`) al `connect-src` del CSP.
+- **No** agregar comodines al `connect-src` del CSP.
 
 ## CSP
 
@@ -51,77 +52,102 @@ navegaciones de primer nivel, que ninguna directiva del CSP gobierna — por eso
 
 ---
 
-## ⚠️ Pendiente 1 — Ruteo al workspace (bloqueante para el redirect final)
+## Ruteo al workspace (Keycloak Organizations)
 
-Hoy, tras autenticarse, el usuario llega a `/dashboard` y ve **"tu cuenta no tiene
-una empresa asignada"**. Eso es intencional: falla cerrado.
+Tras autenticar, la website decide a qué CRM mandar al usuario usando el claim
+`organization` que Keycloak firma dentro del ID token.
 
-El modelo de workspaces vivía en Supabase (`supabase/schema.sql`). Al sacar
-Supabase como proveedor de identidad, el front estático **ya no tiene ninguna
-fuente confiable** para saber a qué empresa pertenece un usuario. Adivinarlo sería
-exactamente el bug que expone el CRM de una empresa a otra.
+### Configuración en Keycloak
 
-Hay dos caminos. **Hay que elegir uno.**
+- **Organizations** habilitado en el realm `dchati` (Keycloak 26).
+- La organización de Biomasa existe con alias **`camino_de_la_ribera`**, y los
+  usuarios correspondientes son miembros de ella.
+- El cliente `dchati-launcher` tiene el client scope **`organization`** asignado
+  como **Optional**, que aporta el mapper **Organization Membership**.
 
-### Opción A — Claim firmado en el ID token (sin backend nuevo)
+Al ser un scope **opcional**, hay que pedirlo explícitamente. La website solicita
+`scope=openid organization` (`js/auth-config.js`). Sin eso Keycloak omite el claim
+y **todos los usuarios parecen no tener empresa**, aunque sí sean miembros.
 
-Requiere **un cambio en Keycloak**: un protocol mapper que agregue el slug del
-workspace al ID token.
+El ID token queda así:
 
-1. Realm `dchati` → Clients → `dchati-launcher` → **Client scopes** →
-   `dchati-launcher-dedicated` → **Add mapper** → **By configuration** →
-   **User Attribute**.
-2. Configurar:
-   - Name: `dchati-workspace`
-   - User Attribute: `workspace`
-   - Token Claim Name: `dchati_workspace`
-   - Claim JSON Type: `String`
-   - **Add to ID token: ON**
-   - Add to access token: ON (útil cuando el CRM valide el token)
-   - Multivalued: OFF
-3. En cada usuario (Users → Attributes) agregar `workspace = <slug>`
-   (minúsculas, `^[a-z0-9][a-z0-9-]{0,62}$`, ej. `scopice`).
+```json
+{
+  "sub": "8bf3eb33-715f-424b-a88d-4d492eda9b77",
+  "name": "Test User",
+  "organization": ["camino_de_la_ribera"]
+}
+```
 
-El front ya soporta esto: `js/auth.js` lee el claim, valida el slug y arma la URL
-como `workspaceBaseUrl + slug`. **Nunca** acepta una URL completa desde un claim,
-así que ningún valor puede redirigir fuera de `app.dchati.com`.
+### Cómo lo usa la website
 
-> El nombre del claim se cambia en `workspaceClaim` (`js/auth-config.js`).
+En `js/auth-config.js`:
 
-**Límite honesto de esta opción:** el claim dice a dónde *mandar* al usuario, no
-le da *permiso*. La autorización real la tiene que hacer `app.dchati.com`
-validando el token contra Keycloak. Si el CRM no valida, el ruteo es solo
-comodidad de UI, no una frontera de seguridad.
+- `organizationClaim: "organization"` — el claim que se lee.
+- `workspaces` — **registro explícito** alias hacia URL de destino:
 
-### Opción B — Endpoint de resolución en el backend
+```js
+workspaces: {
+  camino_de_la_ribera: "https://biomasa.dchati.com/b2b/camino_de_la_ribera/sso",
+},
+```
 
-Un servicio propio expone `GET /api/me/workspace`, recibe el access token en
-`Authorization: Bearer …`, lo valida contra el JWKS del realm y responde el
-workspace desde la base. Es lo correcto si la relación usuario↔empresa vive en
-una base y no en Keycloak.
+`resolveWorkspace()` en `js/auth.js`:
 
-Requiere: el servicio, su despliegue, y agregar su origen al `connect-src`.
-Hoy **ese backend no existe en este repositorio**.
+1. Lee `claims.organization`. Acepta un **array de strings** (la forma real) o un
+   string suelto, que trata como una sola organización.
+2. Exige **exactamente una** organización. Cero da `null`. Más de una da `null`:
+   elegir por el usuario es precisamente cómo un tenant termina dentro de otro.
+3. Normaliza el alias (trim + minúsculas) y lo valida contra
+   `^[a-z0-9][a-z0-9_-]{0,62}$` — admite guiones bajos.
+4. **Busca** el alias en `workspaces`. No arma la URL concatenando nada. Un alias
+   que no esté en la tabla no resuelve.
+
+### Por qué un registro y no una plantilla
+
+El alias **no determina el host**: `camino_de_la_ribera` vive en
+`biomasa.dchati.com`. Una plantilla del tipo `https://{alias}.dchati.com/…` daría
+`camino_de_la_ribera.dchati.com`, que no existe. Por eso el mapping es una tabla
+de datos, no una regla inferida.
+
+Dos consecuencias buscadas: una organización ausente de la tabla **falla cerrado**
+—el usuario ve "todavía no tiene una empresa asignada" en vez de ir a un destino
+equivocado—, y como el destino se **busca** en vez de concatenarse, ningún valor
+del claim puede llevar a un host que no esté listado.
+
+### Agregar una empresa nueva
+
+1. Crear la Organization en Keycloak con su alias y sumar a los usuarios como miembros.
+2. Agregar una línea a `workspaces` en `js/auth-config.js`: alias hacia URL del CRM.
+
+No hace falta tocar nada más.
+
+### Límite honesto
+
+El claim dice a dónde **mandar** al usuario, no le da **permiso**. La autorización
+real la hace cada CRM validando el token contra Keycloak — que es lo que ya hace
+Biomasa (`[KEYCLOAK] ✓ Login autorizado`). Si un CRM no validara, el ruteo sería
+solo comodidad de UI, no una frontera de seguridad.
 
 ---
 
-## ⚠️ Pendiente 2 — Verificar el dominio canónico (`www` vs apex)
+## ⚠️ Pendiente — Verificar el dominio canónico (`www` vs apex)
 
 Esto puede romper el login en producción y hay que confirmarlo.
 
 - El cliente de Keycloak está registrado con **`https://dchati.com`** (redirect URI y Web origin).
 - Pero `README.md` y la config de NPM describen el sitio servido en **`www.dchati.com`**,
-  con `dchati.com` → `https://www.dchati.com` por **Redirection Host (301)**.
+  con `dchati.com` hacia `https://www.dchati.com` por **Redirection Host (301)**.
 
 Si el usuario navega en `www.dchati.com`, el `fetch()` al endpoint `/token` sale
 con `Origin: https://www.dchati.com`, que **no** está en los Web origins del
-cliente → el navegador bloquea la respuesta por CORS y el login falla después de
-que Keycloak ya autenticó. Además el 301 del apex al `www` en medio del callback
-puede perder el `?code=`.
+cliente, así que el navegador bloquea la respuesta por CORS y el login falla
+después de que Keycloak ya autenticó. Además el 301 del apex al `www` en medio
+del callback puede perder el `?code=`.
 
 Elegir una:
 
-1. **Servir el sitio en el apex** `https://dchati.com` (y redirigir `www` → apex).
+1. **Servir el sitio en el apex** `https://dchati.com` (y redirigir `www` al apex).
    No requiere tocar Keycloak. Es lo que asume la config actual.
 2. **Agregar `www` en Keycloak**: `https://www.dchati.com/*` en Valid redirect URIs
    y `https://www.dchati.com` en Web origins, y cambiar `redirectUri` /
@@ -141,7 +167,7 @@ habitual de una SPA sin backend, y se apoya en el CSP estricto
 
 La alternativa más segura —tokens en cookie `HttpOnly` gestionados por un
 backend-for-frontend— **exige un backend**, que hoy no existe. Si en algún
-momento se agrega (ver Pendiente 1, Opción B), conviene mover la sesión ahí.
+momento se agrega, conviene mover la sesión ahí.
 
 ## Checklist
 
@@ -151,7 +177,7 @@ momento se agrega (ver Pendiente 1, Opción B), conviene mover la sesión ahí.
 - [x] Destinos de redirección hardcodeados; sin open redirect.
 - [x] Logout contra el endpoint de Keycloak (termina la sesión SSO).
 - [x] CSP sin comodines.
-- [ ] **Elegir Opción A u B para el ruteo al workspace.**
+- [x] Ruteo al workspace por claim `organization` + registro explícito, que falla cerrado.
 - [ ] **Confirmar dominio canónico (`www` vs apex).**
-- [ ] Que `app.dchati.com` valide el token de Keycloak (autorización real).
+- [ ] Que cada CRM valide el token de Keycloak (autorización real). Biomasa ya lo hace.
 - [ ] Activar rate limiting / brute force detection en el realm.

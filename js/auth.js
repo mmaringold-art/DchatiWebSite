@@ -22,13 +22,13 @@
    WORKSPACE-MAPPING NOTE
    ----------------------
    Authentication (who is this?) and authorization (which workspace
-   may they open?) are deliberately separate here. This client will
-   only route a user to a workspace if Keycloak asserts the workspace
-   in a signed ID-token claim, and even then it rebuilds the URL from
-   a hardcoded base plus a strictly validated slug. It never accepts a
-   workspace identifier from the URL, from storage written by another
-   page, or from user input. If the claim is absent, routing fails
-   closed — see resolveWorkspace().
+   may they open?) are deliberately separate here. This client routes a
+   user only on the `organization` claim Keycloak signs into the ID
+   token, and it does not build the destination from that claim: it
+   looks the alias up in a fixed registry (CFG.workspaces). It never
+   accepts a workspace identifier from the URL, from storage written by
+   another page, or from user input. An absent, ambiguous or unknown
+   organization fails closed — see resolveWorkspace().
    ============================================================ */
 (function (global) {
   "use strict";
@@ -405,30 +405,47 @@
      destination, because guessing is how one tenant ends up looking
      at another tenant's CRM.
 
-     The URL is assembled from the hardcoded workspaceBaseUrl and a
-     slug matching ^[a-z0-9][a-z0-9-]{0,62}$, so no claim value can
-     produce an off-domain redirect.
+     Reads the `organization` claim (Keycloak 26 Organizations plus the
+     Organization Membership mapper), whose real shape is an array of
+     aliases:  "organization": ["camino_de_la_ribera"]
+
+     The destination is NOT assembled from the alias — it is looked up in
+     CFG.workspaces, a fixed table. An unknown alias resolves to nothing,
+     so no claim value can reach a host that is not listed there.
      ============================================================ */
-  var SLUG_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
+  var ALIAS_RE = /^[a-z0-9][a-z0-9_-]{0,62}$/;
 
   function resolveWorkspace(claims) {
     if (!claims) return null;
-    var raw = claims[CFG.workspaceClaim];
 
-    /* A multivalued claim (e.g. mapped from groups) is only usable when
-       it identifies exactly one workspace. Two workspaces means we do
-       not know where to send the user; that is a UI choice, not a guess
-       this code is allowed to make. */
-    if (Array.isArray(raw)) {
-      if (raw.length !== 1) return null;
-      raw = raw[0];
-    }
-    if (typeof raw !== "string") return null;
+    var raw = claims[CFG.organizationClaim];
 
-    var slug = raw.trim().toLowerCase();
-    if (!SLUG_RE.test(slug)) return null;
+    /* Keycloak emits an array today. A bare string is accepted as the
+       same thing — one organization — so a shape change does not silently
+       lock everyone out. */
+    if (typeof raw === "string") raw = [raw];
+    if (!Array.isArray(raw)) return null;
 
-    return { slug: slug, url: CFG.workspaceBaseUrl + encodeURIComponent(slug) };
+    /* Exactly one organization. Zero means the user belongs to none; more
+       than one means we do not know which CRM they meant, and picking for
+       them is precisely how one tenant ends up inside another's. Both are
+       a UI decision, not a guess this code may make. */
+    if (raw.length !== 1) return null;
+
+    var alias = raw[0];
+    if (typeof alias !== "string") return null;
+    alias = alias.trim().toLowerCase();
+    if (!ALIAS_RE.test(alias)) return null;
+
+    /* hasOwnProperty so an alias like "__proto__" or "constructor" cannot
+       resolve against the prototype chain instead of the registry. */
+    var registry = CFG.workspaces || {};
+    if (!Object.prototype.hasOwnProperty.call(registry, alias)) return null;
+
+    var url = registry[alias];
+    if (typeof url !== "string" || url.indexOf("https://") !== 0) return null;
+
+    return { slug: alias, url: url };
   }
 
   function displayName(session) {
