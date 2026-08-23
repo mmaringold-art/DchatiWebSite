@@ -17,10 +17,19 @@ window.DCHATI_AUTH_CONFIG = {
   issuer: "https://auth.dchati.com/realms/dchati",
   clientId: "dchati-launcher",
 
-  /* Only "openid" is requested. Keycloak applies the `profile` and
-     `email` default client scopes on top of it, so the ID token still
-     carries name/email for display. */
-  scope: "openid",
+  /* TEMPORAL (diagnostico) — se agrega el client scope opcional
+     `organization` (Keycloak 26 Organizations), que ya esta asignado a
+     dchati-launcher, para poder inspeccionar la forma real del claim en
+     el ID token.
+
+     OJO: la logica de resolucion de workspace NO fue tocada — sigue
+     leyendo `dchati_workspace` con la regex y la URL base de siempre.
+     Hasta ajustarla, el dashboard va a seguir mostrando "todavia no
+     tiene una empresa asignada", ahora con el claim presente en el token.
+
+     `profile` y `email` los sigue aplicando Keycloak como default
+     client scopes, asi que name/email se mantienen. */
+  scope: "openid organization",
 
   /* ---- Fixed redirect targets (open-redirect protection) ----
      These must match, byte for byte, the "Valid redirect URIs" and
