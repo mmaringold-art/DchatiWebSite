@@ -13,6 +13,12 @@
    token, and it fails closed when that claim is absent. It does not
    invent a destination, because a wrong guess here means showing one
    company another company's CRM.
+
+   In direct mode (CFG.directSsoWorkspace set, the default today) this
+   page is no longer part of the entry path: platform.html hands the user
+   to their CRM instead. It stays here, working, so that a callback still
+   in flight completes and so that turning the launcher back on needs no
+   change beyond that one config line.
    ============================================================ */
 (function () {
   "use strict";
@@ -109,6 +115,22 @@
 
   /* ---- unauthenticated: bounce to Keycloak, but never in a loop ---- */
   function requireLogin() {
+    /* Direct mode: this page is not the entry point any more, so there is
+       no launcher flow to start. Send the user to their CRM, which will
+       authenticate them itself. */
+    var direct = DchatiAuth.directWorkspace();
+    if (direct) {
+      render({
+        status: "Redirigiendo",
+        title: "Abriendo tu CRM…",
+        message: "Te llevamos a " + direct.url.replace(/^https?:\/\//, "") + " para verificar tu identidad.",
+        dest: direct.url.replace(/^https?:\/\//, ""),
+        enterHref: direct.url,
+      });
+      window.location.assign(direct.url);
+      return;
+    }
+
     var last = 0;
     try {
       last = Number(sessionStorage.getItem(LOOP_GUARD_KEY)) || 0;

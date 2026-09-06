@@ -220,9 +220,11 @@
 
 /* ============================================================
    PART 2 — KEYCLOAK ENTRY POINT
-   This page is a gate, not an authenticator: it either starts the
-   OIDC flow or shows the session it restored. The code exchange and
-   the workspace routing happen on /dashboard (js/dashboard.js).
+   This page is a gate, not an authenticator. By default it hands the
+   user to their CRM, which authenticates them itself (direct mode).
+   With CFG.directSsoWorkspace null it runs the launcher flow instead:
+   the code exchange and the workspace routing happen on /dashboard
+   (js/dashboard.js).
    ============================================================ */
 (function auth() {
   const alertBox = document.getElementById("form-alert");
@@ -250,10 +252,21 @@
     signedIn.hidden = view !== "in";
   }
 
-  /* ---- start the Authorization Code + PKCE flow ---- */
+  /* ---- entry point ----
+     Direct mode (the default, see CFG.directSsoWorkspace): hand the user
+     to their CRM and let it authenticate them. Launcher mode: run our own
+     Authorization Code + PKCE flow, then route on /dashboard. */
+  const direct = DchatiAuth.directWorkspace();
+
   function startLogin(btn) {
     clearAlert();
     busy(btn, true);
+
+    if (direct) {
+      window.location.assign(direct.url);
+      return;
+    }
+
     DchatiAuth.login().catch((err) => {
       busy(btn, false);
       showAlert(err.message || DchatiAuth.messages.generic);
@@ -262,26 +275,36 @@
 
   loginBtn.addEventListener("click", () => startLogin(loginBtn));
 
-  /* Already signed in -> go to the routing page, which decides where
-     this user's workspace actually is. */
+  /* Already signed in -> in launcher mode /dashboard decides where this
+     user's workspace is; in direct mode we already know. */
   continueBtn.addEventListener("click", () => {
     busy(continueBtn, true);
-    window.location.assign("dashboard.html");
+    window.location.assign(direct ? direct.url : "dashboard.html");
   });
 
   logoutBtn.addEventListener("click", () => DchatiAuth.logout());
 
-  /* ---- session restoration on load ----
-     A refresh of an expired access token happens inside getSession(),
-     so a returning user lands straight on the signed-in view. */
   show("out");
-  DchatiAuth.getSession()
-    .then((session) => {
-      if (!session) return show("out");
-      userEl.textContent = DchatiAuth.displayName(session);
-      show("in");
-    })
-    .catch(() => show("out"));
+
+  if (direct) {
+    /* A launcher session left over from before this mode was turned on
+       will never be refreshed or used again, so drop it rather than leave
+       a stale refresh token sitting in localStorage. This clears local
+       state only — the Keycloak SSO cookie is untouched, which is why the
+       CRM's own flow still completes without asking for a password. */
+    DchatiAuth.clearSession();
+  } else {
+    /* ---- session restoration on load ----
+       A refresh of an expired access token happens inside getSession(),
+       so a returning user lands straight on the signed-in view. */
+    DchatiAuth.getSession()
+      .then((session) => {
+        if (!session) return show("out");
+        userEl.textContent = DchatiAuth.displayName(session);
+        show("in");
+      })
+      .catch(() => show("out"));
+  }
 
   /* Keycloak sends the user back here after logout; say so plainly. */
   if (new URLSearchParams(window.location.search).has("logout")) {

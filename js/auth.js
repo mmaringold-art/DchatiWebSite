@@ -19,6 +19,10 @@
      5. logout()     clears local state and hits Keycloak's
                      /logout endpoint so the SSO session ends too.
 
+   The whole flow above is bypassed when CFG.directSsoWorkspace is set:
+   platform.html then hands the user straight to that CRM, which
+   authenticates them with a flow of its own. See directWorkspace().
+
    WORKSPACE-MAPPING NOTE
    ----------------------
    Authentication (who is this?) and authorization (which workspace
@@ -415,6 +419,26 @@
      ============================================================ */
   var ALIAS_RE = /^[a-z0-9][a-z0-9_-]{0,62}$/;
 
+  /* Alias -> { slug, url }, or null. The single validated path into the
+     registry: both the alias Keycloak signed into a token and the one
+     named in the config go through these same guards, so neither can
+     reach a host the registry does not list. */
+  function lookupWorkspace(alias) {
+    if (typeof alias !== "string") return null;
+    alias = alias.trim().toLowerCase();
+    if (!ALIAS_RE.test(alias)) return null;
+
+    /* hasOwnProperty so an alias like "__proto__" or "constructor" cannot
+       resolve against the prototype chain instead of the registry. */
+    var registry = CFG.workspaces || {};
+    if (!Object.prototype.hasOwnProperty.call(registry, alias)) return null;
+
+    var url = registry[alias];
+    if (typeof url !== "string" || url.indexOf("https://") !== 0) return null;
+
+    return { slug: alias, url: url };
+  }
+
   function resolveWorkspace(claims) {
     if (!claims) return null;
 
@@ -432,20 +456,19 @@
        a UI decision, not a guess this code may make. */
     if (raw.length !== 1) return null;
 
-    var alias = raw[0];
-    if (typeof alias !== "string") return null;
-    alias = alias.trim().toLowerCase();
-    if (!ALIAS_RE.test(alias)) return null;
+    return lookupWorkspace(raw[0]);
+  }
 
-    /* hasOwnProperty so an alias like "__proto__" or "constructor" cannot
-       resolve against the prototype chain instead of the registry. */
-    var registry = CFG.workspaces || {};
-    if (!Object.prototype.hasOwnProperty.call(registry, alias)) return null;
-
-    var url = registry[alias];
-    if (typeof url !== "string" || url.indexOf("https://") !== 0) return null;
-
-    return { slug: alias, url: url };
+  /* ============================================================
+     6 — Direct hand-off to a CRM (no launcher login)
+     ------------------------------------------------------------
+     Returns the workspace platform.html should hand the user to
+     without running the flow above, or null when the launcher is in
+     charge. Driven by CFG.directSsoWorkspace — see the note beside it
+     in js/auth-config.js for why this is the default today.
+     ============================================================ */
+  function directWorkspace() {
+    return CFG.directSsoWorkspace ? lookupWorkspace(CFG.directSsoWorkspace) : null;
   }
 
   function displayName(session) {
@@ -466,6 +489,7 @@
     logout: logout,
     clearSession: clearSession,
     resolveWorkspace: resolveWorkspace,
+    directWorkspace: directWorkspace,
     displayName: displayName,
   };
 })(window);

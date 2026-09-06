@@ -1,13 +1,61 @@
 # Keycloak SSO — login de la plataforma
 
-El login de `platform.html` usa **Keycloak** con **Authorization Code + PKCE (S256)**.
-El sitio sigue siendo estático: sin framework, sin build, sin runtime de Node.
+El sitio es estático: sin framework, sin build, sin runtime de Node. Trae un
+cliente OIDC completo (**Authorization Code + PKCE S256**) para `platform.html`,
+hoy en pausa: ver "Modo actual" abajo.
 
 - Realm: `dchati` — `https://auth.dchati.com/realms/dchati`
 - Cliente: `dchati-launcher` (**público**, sin client secret)
 - Callback: `https://dchati.com/dashboard`
 
-## Cómo está armado
+## Modo actual — hand-off directo al CRM
+
+**El launcher está desactivado.** `platform.html` no inicia ningún flujo OIDC
+propio: manda al usuario directo al CRM de su empresa, y el CRM lo autentica con
+el flujo que ya tenía.
+
+```
+platform.html  ──▶  https://biomasa.dchati.com/b2b/camino_de_la_ribera/sso
+                            │
+                            └─▶ el CRM corre su propio OIDC contra auth.dchati.com
+```
+
+Lo controla **una línea** en `js/auth-config.js`:
+
+```js
+directSsoWorkspace: "camino_de_la_ribera",   // null => vuelve el launcher
+```
+
+Tiene que ser una clave de `workspaces`. Se **busca** en esa tabla, no se
+concatena, así que no puede apuntar a un host que el registro no liste.
+
+### Por qué
+
+El round trip del launcher no autenticaba a nadie: cada CRM hace igual su propio
+flujo OIDC y es **su** token el que da acceso, no el nuestro (ver "Límite honesto"
+más abajo). El launcher solo leía el claim `organization` para **elegir destino**,
+y hoy `workspaces` tiene exactamente un destino. Un selector de un elemento no
+selecciona nada, y a cambio costaba: un segundo client de Keycloak, la dependencia
+de un client scope Optional, y el problema `www` vs apex que estaba sin resolver.
+
+Efecto secundario importante: en modo directo el navegador **nunca llama a
+`/token` desde `dchati.com`**, que es donde ese problema de CORS esperaba.
+
+### Cuándo volver al launcher
+
+Cuando haya un **segundo tenant** en `workspaces` — elegir entre dos destinos es
+el único trabajo que el claim `organization` hace de verdad. Poner
+`directSsoWorkspace: null` y subir; no hay nada más que revertir. Antes de eso,
+resolver el pendiente del dominio canónico.
+
+---
+
+## Cómo está armado (modo launcher)
+
+Lo que sigue describe el flujo del launcher: el que corre con
+`directSsoWorkspace: null`. Con el valor actual nada de esto se ejecuta, pero
+el código está entero y funciona.
+
 
 | Archivo | Rol |
 |---------|-----|
@@ -133,7 +181,10 @@ solo comodidad de UI, no una frontera de seguridad.
 
 ## ⚠️ Pendiente — Verificar el dominio canónico (`www` vs apex)
 
-Esto puede romper el login en producción y hay que confirmarlo.
+**En modo directo esto ya no rompe el login:** `dchati.com` no hace ningún
+`fetch()` a `/token`, así que no hay CORS que fallar ni `?code=` que perder. Pero
+sigue sin resolverse, y **hay que resolverlo antes de volver a activar el
+launcher**.
 
 - El cliente de Keycloak está registrado con **`https://dchati.com`** (redirect URI y Web origin).
 - Pero `README.md` y la config de NPM describen el sitio servido en **`www.dchati.com`**,
@@ -178,6 +229,7 @@ momento se agrega, conviene mover la sesión ahí.
 - [x] Logout contra el endpoint de Keycloak (termina la sesión SSO).
 - [x] CSP sin comodines.
 - [x] Ruteo al workspace por claim `organization` + registro explícito, que falla cerrado.
-- [ ] **Confirmar dominio canónico (`www` vs apex).**
+- [x] Entrada por hand-off directo al CRM (`directSsoWorkspace`), sin doble flujo OIDC.
+- [ ] **Confirmar dominio canónico (`www` vs apex)** — bloquea reactivar el launcher.
 - [ ] Que cada CRM valide el token de Keycloak (autorización real). Biomasa ya lo hace.
 - [ ] Activar rate limiting / brute force detection en el realm.

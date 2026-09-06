@@ -64,6 +64,28 @@ window.DCHATI_AUTH_CONFIG = {
     camino_de_la_ribera: "https://biomasa.dchati.com/b2b/camino_de_la_ribera/sso",
   },
 
+  /* ---- Entry mode: hand off to the CRM instead of logging in here ----
+     dchati.com does not need a login of its own. Every CRM already runs a
+     full OIDC flow against this same realm — that is exactly what
+     /b2b/<alias>/sso is — and it is the CRM's token, not ours, that grants
+     access. The launcher's round trip authenticates nobody a second time;
+     it only reads the `organization` claim to choose a destination, and
+     today the registry above holds exactly one destination to choose.
+
+     So platform.html hands the user straight to this workspace and lets
+     the CRM authenticate them. It also means the browser never calls
+     /token from this origin, which is where the www-vs-apex CORS problem
+     in KEYCLOAK_SETUP.md was waiting to bite.
+
+     Nothing in the launcher is deleted. Set this to null and js/auth.js
+     takes over again — which is what a second entry in `workspaces` would
+     call for, since choosing between two destinations is the one job the
+     claim actually does.
+
+     Must be a key of `workspaces`: it is looked up, never concatenated,
+     so it cannot point anywhere the registry does not already list. */
+  directSsoWorkspace: "camino_de_la_ribera",
+
   /* ---- Storage keys ---- */
   txKey: "dchati.oidc.tx",
   sessionKey: "dchati.oidc.session",
