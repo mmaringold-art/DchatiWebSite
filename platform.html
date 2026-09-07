@@ -32,15 +32,16 @@
           <span></span>
         </div>
 
-        <!-- Signed out: hand the user over to Keycloak (Authorization Code + PKCE).
-             Credentials are typed on auth.dchati.com, never here. -->
+        <!-- Signed out: hand the user off to be authenticated elsewhere.
+             Credentials are typed on the Keycloak host, never here. The
+             host below is filled in from js/auth-config.js at runtime. -->
         <div id="view-signed-out" hidden>
           <button type="button" class="btn-submit" id="login-btn">
             <span class="label-default">Entrar a la plataforma</span>
             <span class="spinner" aria-hidden="true"></span>
           </button>
           <p class="auth-note">
-            Te llevamos a <b>auth.dchati.com</b> para verificar tu identidad. Ahí gestionás también tu contraseña.
+            Te llevamos a <b id="auth-host">auth.dev.dchati.com</b> para verificar tu identidad. Ahí gestionás también tu contraseña.
           </p>
         </div>
 
@@ -83,8 +84,8 @@
 
   </main>
 
-  <script src="js/auth-config.js?v=3"></script>
-  <script src="js/auth.js?v=3"></script>
-  <script src="js/platform.js?v=3"></script>
+  <script src="js/auth-config.js?v=4"></script>
+  <script src="js/auth.js?v=4"></script>
+  <script src="js/platform.js?v=4"></script>
 </body>
 </html>

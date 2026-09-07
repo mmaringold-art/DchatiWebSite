@@ -6,7 +6,7 @@
 
 /* ------------------------------------------------------------
    AUTH
-   Authentication is handled entirely by Keycloak at auth.dchati.com
+   Authentication is handled entirely by Keycloak (host in js/auth-config.js)
    using Authorization Code + PKCE (S256). This page never sees a
    password, never holds a client secret, and never decides which
    workspace a user may open — that lives in the ID token Keycloak
@@ -251,6 +251,12 @@
     signedOut.hidden = view !== "out";
     signedIn.hidden = view !== "in";
   }
+
+  /* Keep the visible host in step with js/auth-config.js. The markup ships
+     with the same value so the note still reads correctly if this never
+     runs; this only stops the two drifting apart on an environment switch. */
+  const authHostEl = document.getElementById("auth-host");
+  if (authHostEl && DchatiAuth.authHost) authHostEl.textContent = DchatiAuth.authHost;
 
   /* ---- entry point ----
      Direct mode (the default, see CFG.directSsoWorkspace): hand the user

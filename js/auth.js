@@ -51,12 +51,25 @@
   /* refresh the access token this long before it actually expires */
   var EXPIRY_SKEW_MS = 30 * 1000;
 
+  /* Host of a configured URL, for user-facing text that has to name a
+     server. Derived, never written twice: a message that hardcodes a
+     domain is a message that goes stale the next time the environment
+     changes, which is exactly how this file ended up naming production
+     hosts while the site ran on dev. */
+  function hostOf(url) {
+    try {
+      return new URL(url).host;
+    } catch (e) {
+      return "";
+    }
+  }
+
   /* ============================================================
      Errors — every message is user-facing Spanish.
      ============================================================ */
   var MESSAGES = {
     insecure:
-      "El acceso seguro necesita HTTPS. Abrí el sitio en https://dchati.com e intentá de nuevo.",
+      "El acceso seguro necesita HTTPS. Abrí el sitio en " + CFG.siteOrigin + " e intentá de nuevo.",
     network:
       "No pudimos contactar al servidor de identidad. Revisá tu conexión e intentá de nuevo.",
     expired_code:
@@ -480,6 +493,7 @@
   global.DchatiAuth = {
     config: CFG,
     endpoints: ENDPOINTS,
+    authHost: hostOf(CFG.issuer),
     messages: MESSAGES,
     canDoPkce: canDoPkce,
     isCallback: isCallback,

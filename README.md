@@ -2,7 +2,14 @@
 
 Premium marketing site for **Dchati**, an AI-powered customer-communication and business-management platform built around WhatsApp.
 
-Served at **www.dchati.com**. The CRM/app lives separately at **app.dchati.com**.
+> **Entorno actual: DEV** — la web se sirve en `dev.dchati.com`, el CRM de
+> Biomasa en `biomasa.dev.dchati.com` y la inmobiliaria en `app.dev.dchati.com`.
+> El detalle de hosts y cómo cambiar de entorno está en
+> [KEYCLOAK_SETUP.md](KEYCLOAK_SETUP.md#entornos).
+
+Las secciones de despliegue de abajo todavía describen el montaje de **producción**
+(`www.dchati.com` + apex, con Redirection Host). En DEV los Proxy Hosts ya existen
+en Nginx Proxy Manager y no hace falta recrearlos.
 
 ---
 

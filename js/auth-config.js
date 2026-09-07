@@ -12,9 +12,31 @@
    from user input, or from a token claim without validation —
    see js/auth.js.
    ============================================================ */
+
+/* ============================================================
+   ENVIRONMENT — DEV
+   ------------------------------------------------------------
+   Every host below belongs to the dev stack. Switching environments
+   means editing this file and nothing else: the constants here plus
+   the `workspaces` table are the only places a host is written down,
+   and every user-facing string that names a host derives from them at
+   runtime (see js/auth.js and js/platform.js) rather than repeating it.
+
+   The single host outside this file is the CSP `connect-src` in
+   nginx.conf, which must name the same origin as `issuer`.
+
+       DEV                       PROD
+       dev.dchati.com            dchati.com
+       auth.dev.dchati.com       auth.dchati.com
+       biomasa.dev.dchati.com    biomasa.dchati.com
+       app.dev.dchati.com        app.dchati.com
+
+   The PROD values are recorded in KEYCLOAK_SETUP.md, not here, so this
+   file always describes exactly one environment.
+   ============================================================ */
 window.DCHATI_AUTH_CONFIG = {
   /* ---- Keycloak ---- */
-  issuer: "https://auth.dchati.com/realms/dchati",
+  issuer: "https://auth.dev.dchati.com/realms/dchati",
   clientId: "dchati-launcher",
 
   /* `organization` is an OPTIONAL client scope on dchati-launcher, so it
@@ -30,13 +52,14 @@ window.DCHATI_AUTH_CONFIG = {
      "Valid post logout redirect URIs" registered on the client.
      They are hardcoded on purpose: the browser can never influence
      where Keycloak sends the user back to. */
-  redirectUri: "https://dchati.com/dashboard",
-  postLogoutRedirectUri: "https://dchati.com/platform.html?logout=1",
+  redirectUri: "https://dev.dchati.com/dashboard",
+  postLogoutRedirectUri: "https://dev.dchati.com/platform.html?logout=1",
 
-  /* The site is only ever served from this origin. If window.location
-     does not match, we still use the constants above, so a copy of the
-     page hosted elsewhere cannot harvest a code. */
-  siteOrigin: "https://dchati.com",
+  /* The origin this site is served from. Named in the "you need HTTPS"
+     message so it points at the right environment; the redirect targets
+     above are what actually keep a copy of this page hosted elsewhere
+     from harvesting a code, since Keycloak matches them exactly. */
+  siteOrigin: "https://dev.dchati.com",
 
   /* ---- Tenant routing — Keycloak 26 Organizations ----
      With the `organization` client scope and the Organization Membership
@@ -52,8 +75,8 @@ window.DCHATI_AUTH_CONFIG = {
   /* Explicit alias -> destination registry.
 
      There is deliberately NO derived rule here. The alias does not
-     determine the host: `camino_de_la_ribera` lives on biomasa.dchati.com,
-     and a template like https://{alias}.dchati.com/... would resolve to a
+     determine the host: `camino_de_la_ribera` lives on biomasa.dev.dchati.com,
+     and a template like https://{alias}.dev.dchati.com/... would resolve to a
      host that does not exist. So this is a data table, not a rule.
 
      Two consequences, both wanted: an organization missing from this table
@@ -61,11 +84,11 @@ window.DCHATI_AUTH_CONFIG = {
      up rather than concatenated, no claim value can send a user to a host
      that is not listed here. Adding a tenant is one line. */
   workspaces: {
-    camino_de_la_ribera: "https://biomasa.dchati.com/b2b/camino_de_la_ribera/sso",
+    camino_de_la_ribera: "https://biomasa.dev.dchati.com/b2b/camino_de_la_ribera/sso",
   },
 
   /* ---- Entry mode: hand off to the CRM instead of logging in here ----
-     dchati.com does not need a login of its own. Every CRM already runs a
+     The website does not need a login of its own. Every CRM already runs a
      full OIDC flow against this same realm — that is exactly what
      /b2b/<alias>/sso is — and it is the CRM's token, not ours, that grants
      access. The launcher's round trip authenticates nobody a second time;

@@ -1,12 +1,42 @@
 # Keycloak SSO — login de la plataforma
 
+> **Entorno de este repo: DEV.** Todos los hosts de acá abajo son de dev.
+> Los valores de producción están al final, en [Referencia — PROD](#referencia--prod).
+
 El sitio es estático: sin framework, sin build, sin runtime de Node. Trae un
 cliente OIDC completo (**Authorization Code + PKCE S256**) para `platform.html`,
 hoy en pausa: ver "Modo actual" abajo.
 
-- Realm: `dchati` — `https://auth.dchati.com/realms/dchati`
+- Realm: `dchati` — `https://auth.dev.dchati.com/realms/dchati`
 - Cliente: `dchati-launcher` (**público**, sin client secret)
-- Callback: `https://dchati.com/dashboard`
+- Callback: `https://dev.dchati.com/dashboard`
+
+## Entornos
+
+| | DEV (actual) | PROD |
+|---|---|---|
+| Web | `dev.dchati.com` | `dchati.com` |
+| Keycloak | `auth.dev.dchati.com` | `auth.dchati.com` |
+| Biomasa (CRM) | `biomasa.dev.dchati.com` | `biomasa.dchati.com` |
+| Inmobiliaria | `app.dev.dchati.com` | `app.dchati.com` |
+
+**Cambiar de entorno son dos archivos**, y ninguno más:
+
+1. `js/auth-config.js` — `issuer`, `redirectUri`, `postLogoutRedirectUri`,
+   `siteOrigin` y la tabla `workspaces`.
+2. `nginx.conf` — el host de Keycloak en `connect-src` del CSP, que tiene que
+   coincidir con `issuer`.
+
+Ningún otro archivo escribe un dominio. Los textos que nombran un host
+(`js/auth.js`, `js/dashboard.js`, `platform.html`) lo **derivan** de esa config
+en runtime vía `DchatiAuth.authHost` y `CFG.siteOrigin`. Eso es a propósito: un
+mensaje con el dominio hardcodeado es un mensaje que queda viejo en el próximo
+cambio de entorno, que es exactamente cómo el repo terminó nombrando producción
+mientras el sitio corría en dev.
+
+> ⚠️ Los hosts también están registrados **en Keycloak** (Valid redirect URIs y
+> Web origins del cliente `dchati-launcher`) y **en Nginx Proxy Manager**. Eso no
+> se toca desde este repo.
 
 ## Modo actual — hand-off directo al CRM
 
@@ -15,9 +45,9 @@ propio: manda al usuario directo al CRM de su empresa, y el CRM lo autentica con
 el flujo que ya tenía.
 
 ```
-platform.html  ──▶  https://biomasa.dchati.com/b2b/camino_de_la_ribera/sso
+platform.html  ──▶  https://biomasa.dev.dchati.com/b2b/camino_de_la_ribera/sso
                             │
-                            └─▶ el CRM corre su propio OIDC contra auth.dchati.com
+                            └─▶ el CRM corre su propio OIDC contra auth.dev.dchati.com
 ```
 
 Lo controla **una línea** en `js/auth-config.js`:
@@ -39,7 +69,7 @@ selecciona nada, y a cambio costaba: un segundo client de Keycloak, la dependenc
 de un client scope Optional, y el problema `www` vs apex que estaba sin resolver.
 
 Efecto secundario importante: en modo directo el navegador **nunca llama a
-`/token` desde `dchati.com`**, que es donde ese problema de CORS esperaba.
+`/token` desde `dev.dchati.com`**, que es donde ese problema de CORS esperaba.
 
 ### Cuándo volver al launcher
 
@@ -67,11 +97,11 @@ el código está entero y funciona.
 Flujo:
 
 ```
-platform.html  ──login()──▶  auth.dchati.com/.../auth?scope=openid+organization
+platform.html  ──login()──▶  auth.dev.dchati.com/.../auth?scope=openid+organization
                                                      &code_challenge_method=S256
                                         │
                                         ▼
-                        dchati.com/dashboard?code=…&state=…
+                    dev.dchati.com/dashboard?code=…&state=…
                                         │
                     POST /token  (code + code_verifier original)
                                         │
@@ -91,7 +121,7 @@ platform.html  ──login()──▶  auth.dchati.com/.../auth?scope=openid+org
 `nginx.conf` permite exactamente un tercero:
 
 ```
-connect-src 'self' https://auth.dchati.com;
+connect-src 'self' https://auth.dev.dchati.com;
 ```
 
 Es el `fetch()` del intercambio de código y del refresh. El login y el logout son
@@ -136,7 +166,7 @@ En `js/auth-config.js`:
 
 ```js
 workspaces: {
-  camino_de_la_ribera: "https://biomasa.dchati.com/b2b/camino_de_la_ribera/sso",
+  camino_de_la_ribera: "https://biomasa.dev.dchati.com/b2b/camino_de_la_ribera/sso",
 },
 ```
 
@@ -154,8 +184,8 @@ workspaces: {
 ### Por qué un registro y no una plantilla
 
 El alias **no determina el host**: `camino_de_la_ribera` vive en
-`biomasa.dchati.com`. Una plantilla del tipo `https://{alias}.dchati.com/…` daría
-`camino_de_la_ribera.dchati.com`, que no existe. Por eso el mapping es una tabla
+`biomasa.dev.dchati.com`. Una plantilla del tipo `https://{alias}.dev.dchati.com/…` daría
+`camino_de_la_ribera.dev.dchati.com`, que no existe. Por eso el mapping es una tabla
 de datos, no una regla inferida.
 
 Dos consecuencias buscadas: una organización ausente de la tabla **falla cerrado**
@@ -179,14 +209,35 @@ solo comodidad de UI, no una frontera de seguridad.
 
 ---
 
-## ⚠️ Pendiente — Verificar el dominio canónico (`www` vs apex)
+## Referencia — PROD
 
-**En modo directo esto ya no rompe el login:** `dchati.com` no hace ningún
-`fetch()` a `/token`, así que no hay CORS que fallar ni `?code=` que perder. Pero
-sigue sin resolverse, y **hay que resolverlo antes de volver a activar el
-launcher**.
+**Nada de esta sección está activo.** Queda registrado para cuando haya que
+volver a producción; el repo hoy apunta a DEV.
 
-- El cliente de Keycloak está registrado con **`https://dchati.com`** (redirect URI y Web origin).
+Valores de producción para los dos archivos de la tabla de arriba:
+
+```js
+// js/auth-config.js
+issuer:                "https://auth.dchati.com/realms/dchati",
+redirectUri:           "https://dchati.com/dashboard",
+postLogoutRedirectUri: "https://dchati.com/platform.html?logout=1",
+siteOrigin:            "https://dchati.com",
+workspaces: {
+  camino_de_la_ribera: "https://biomasa.dchati.com/b2b/camino_de_la_ribera/sso",
+},
+```
+
+```
+# nginx.conf
+connect-src 'self' https://auth.dchati.com;
+```
+
+### ⚠️ Sin resolver en PROD — dominio canónico (`www` vs apex)
+
+Esto **no afecta a DEV**, donde no hay `www`. Hay que resolverlo antes de volver
+a producción, y sobre todo antes de reactivar el launcher.
+
+- El cliente de Keycloak estaba registrado con **`https://dchati.com`** (redirect URI y Web origin).
 - Pero `README.md` y la config de NPM describen el sitio servido en **`www.dchati.com`**,
   con `dchati.com` hacia `https://www.dchati.com` por **Redirection Host (301)**.
 
@@ -196,17 +247,19 @@ cliente, así que el navegador bloquea la respuesta por CORS y el login falla
 después de que Keycloak ya autenticó. Además el 301 del apex al `www` en medio
 del callback puede perder el `?code=`.
 
-Elegir una:
+En modo directo el síntoma no aparece —la web no llama a `/token`— pero la causa
+sigue ahí. Elegir una:
 
 1. **Servir el sitio en el apex** `https://dchati.com` (y redirigir `www` al apex).
-   No requiere tocar Keycloak. Es lo que asume la config actual.
+   No requiere tocar Keycloak.
 2. **Agregar `www` en Keycloak**: `https://www.dchati.com/*` en Valid redirect URIs
-   y `https://www.dchati.com` en Web origins, y cambiar `redirectUri` /
-   `postLogoutRedirectUri` en `js/auth-config.js` al host que realmente sirve.
+   y `https://www.dchati.com` en Web origins, y poner en `js/auth-config.js` el
+   host que realmente sirve.
 
-No cambié nada de Keycloak: hasta saber cuál es el dominio canónico real,
-cualquier elección sería una suposición.
+No se tocó nada de Keycloak desde este repo: hasta saber cuál es el dominio
+canónico real, cualquier elección sería una suposición.
 
+---
 ---
 
 ## Nota sobre el almacenamiento de tokens
@@ -230,6 +283,19 @@ momento se agrega, conviene mover la sesión ahí.
 - [x] CSP sin comodines.
 - [x] Ruteo al workspace por claim `organization` + registro explícito, que falla cerrado.
 - [x] Entrada por hand-off directo al CRM (`directSsoWorkspace`), sin doble flujo OIDC.
-- [ ] **Confirmar dominio canónico (`www` vs apex)** — bloquea reactivar el launcher.
+- [x] Todos los hosts apuntan a DEV; los textos derivan el dominio de la config.
+- [ ] Verificar en el navegador el flujo completo contra dev (ver "Cómo probar").
+- [ ] **Confirmar dominio canónico (`www` vs apex)** — solo PROD; bloquea volver a prod y reactivar el launcher.
 - [ ] Que cada CRM valide el token de Keycloak (autorización real). Biomasa ya lo hace.
 - [ ] Activar rate limiting / brute force detection en el realm.
+
+## Cómo probar (DEV)
+
+1. Abrir `https://dev.dchati.com/platform.html` con **hard refresh** (Ctrl+Shift+R).
+2. La nota bajo el botón debe decir **`auth.dev.dchati.com`**.
+3. Tocar "Entrar a la plataforma". En la pestaña Network, la **primera** navegación
+   tiene que ir a `biomasa.dev.dchati.com/b2b/camino_de_la_ribera/sso`.
+4. **No** debe aparecer ninguna llamada a `auth.dev.dchati.com/.../auth` originada
+   por la web: el que redirige a Keycloak es el CRM, no nosotros.
+5. Si aparece `auth.dchati.com` (sin `dev`), es caché: revisar que los `<script>`
+   pidan `?v=4` y volver a forzar recarga.

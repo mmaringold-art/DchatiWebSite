@@ -149,7 +149,7 @@
     render({
       status: "Acceso requerido",
       title: "Iniciando sesión…",
-      message: "Te llevamos a auth.dchati.com para verificar tu identidad.",
+      message: "Te llevamos a " + DchatiAuth.authHost + " para verificar tu identidad.",
     });
     DchatiAuth.login().catch(showError);
   }
